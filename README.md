@@ -5,6 +5,9 @@ This is a simple javascript trading solution for the ethereum based digital
 option exchange digioptions.com. It supports both, using only a browser and
 nodejs. It is intendended for developing your own trading algorithms.
 
+Click here to view a life version that runs in your browser:
+[https://berlincode.github.io/digioptions-trader.js/trading-browser.html](https://berlincode.github.io/digioptions-trader.js/trading-browser.html).
+
 
 ![logo digioptions.com](img/digioptions.png)
 

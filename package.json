@@ -12,6 +12,7 @@
     "serve": "http-server . -a 127.0.0.1 -p 8888 -c-1"
   },
   "files": [
+    "js/web3.js",
     "js/buffer.js",
     "js/utils.js",
     "js/config.js",
