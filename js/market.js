@@ -1,31 +1,37 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD
-        define([], function () { return factory().Market; } );
+        define([
+            'js/utils'
+        ], function (utils) { return factory(utils).Market; } );
     } else if (typeof module !== 'undefined' && module.exports) {
         // CommonJS (node and other environments that support module.exports)
-        module.exports = factory().Market;
+        module.exports = factory(
+            require('./utils.js')
+        ).Market;
     } else {
         // Global (browser)
-        root.Market = factory().Market;
+        root.Market = factory(
+            root.utils
+        ).Market;
     }
-})(this, function(){
+})(this, function(utils){
 
     /* each market should have a getContent() and isTerminated() method.
      * Terminated markets may be removed from memory.
      * The market should call contentUpdated() to signal that getContent()
      * may return updated content.
      */
-    function Market(contentUpdated, network, marketAddr, optionChain){
+    function Market(contentUpdated, web3, network, chainId, accounts, marketContract, optionChain){
+
         var that = this;
 
         this.content = null;
-//        this.expiry = expiry;
         this.counter = 0;
         this.timer = undefined;
         this.terminated = false; // terminated old Market may be removed from memory
         this.render = function(){
-            this.content = "marketAddr: <span>" + marketAddr + "</span><br/>" +
+            this.content = "marketAddr: <span>" + marketContract.address + "</span><br/>" +
                 "counter: <span>" + this.counter + "</span><br/>" +
                 "expiration: <span>" + optionChain.expiration + "</span><br/>" +
                 "terminated: <span>" + this.terminated + "</span>";
@@ -66,12 +72,14 @@
         };
 
         // check if market should be started at all?
-        if (marketAddr === "0x834767fd1d12c50a48e9b0a8e78f93c3bb24ca6d") {
+/*
+        if (marketContract.address === "0x834767fd1d12c50a48e9b0a8e78f93c3bb24ca6d") {
             this.content = "not started";
             this.terminated = true;
             //contentUpdated();
             return;
         }
+*/
 
         this.timer = setInterval(
             function(){
@@ -81,7 +89,7 @@
             2000
         );
     }
-    
+
     return {'Market': Market};
 });
 

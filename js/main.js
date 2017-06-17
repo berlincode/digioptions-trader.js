@@ -11,16 +11,17 @@
                 config,
                 digioptions_tools,
                 digioptions_contracts,
-                _Web3, /* TODO: quick hack - we use global Web3, because require("web3") returns BigNumber - see https://github.com/ethereum/web3.js/issues/280 */
+                Web3,
                 Market
-            ) { 
+            ) {
                 return factory(
-                    config, 
+                    config,
                     digioptions_tools,
                     digioptions_contracts,
+//                    root.Web3 /* TODO: quick hack for web3 before 1.0 - we use global Web3, because require("web3") returns BigNumber - see https://github.com/ethereum/web3.js/issues/280 */
                     Web3,
                     Market
-                    ).main; } );
+                    ).Main; } );
     } else if (typeof module !== 'undefined' && module.exports) {
         // CommonJS (node and other environments that support module.exports)
         module.exports = factory(
@@ -29,31 +30,34 @@
             require('digioptions-contracts.js'),
             require('web3'),
             require('./market.js')
-        ).main;
+        ).Main;
     } else {
         // Global (browser)
-        root.main = factory(
+        root.Main = factory(
             root.config,
             root.digioptions_tools,
             root.digioptions_contracts,
             root.Web3,
             root.Market
-        ).main;
+        ).Main;
     }
 })(this, function(config, digioptions_tools, digioptions_contracts, Web3, Market){
-    var PubSub = digioptions_tools.PubSub; 
+    var PubSub = digioptions_tools.PubSub;
     var normalize_order = digioptions_tools.normalize_order;
     var web3_was_injected;
 
-    var main = function(shouldRender, updateContent){
+    function Main(contentUpdated){
+        var that = this;
 
-        var pubsub_message_count = 0;
-        var pubsub_feedback_msg = "???";
-        var pubsub_feedback_col = "#000000";
-        var pubsub_feedback_connection_ok = false;
-        var start_time = new Date();
-        var markets = {};
+        this.pubsub_message_count = 0;
+        this.pubsub_feedback_msg = "???";
+        this.pubsub_feedback_col = "#000000";
+        this.pubsub_feedback_connection_ok = false;
+        this.start_time = new Date();
+        this.markets = {};
         var web = {}; // contains web3 for each network
+
+        this.content = null;
 
         // setup web3
         // TODO
@@ -78,7 +82,7 @@ web3.eth.getBlock(48, function(error, result){
         console.error(error);
 });
 */
-        var get_sorted_market_keys = function(markets){
+        this.get_sorted_market_keys = function(markets){
             var sortable = [];
             for (var key in markets) {
                 sortable.push(key);
@@ -90,16 +94,16 @@ web3.eth.getBlock(48, function(error, result){
             return sortable;
         };
 
-        var updateUI = function(){
+        this.updateUI = function(){
             // invalidate old content
             this.content = null;
             // signal new content
             contentUpdated();
         };
 
-        var render = function(){
+        this.render = function(){
             var uptime_string = (function() {
-                var sec_num = Math.floor((new Date() - start_time) / 1000);
+                var sec_num = Math.floor((new Date() - that.start_time) / 1000);
                 var hours   = Math.floor(sec_num / 3600);
                 var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
                 var seconds = sec_num - (hours * 3600) - (minutes * 60);
@@ -109,54 +113,47 @@ web3.eth.getBlock(48, function(error, result){
                 if (seconds < 10) {seconds = "0"+seconds;}
                 return hours+':'+minutes+':'+seconds;
             })();
-            content = (
-                "pubsub status: <span>" + pubsub_feedback_msg + "</span><br/>" + 
-                "pubsub_message_count: <span>" + pubsub_message_count + "</span><br/>" +
-                "web3_was_injected (e.g. Mist or MetaMask): <span>" + web3_was_injected + "</span> (does not work for file:// urls)<br/>" + 
-                "uptime: <span>" + uptime_string + "</span><br/>" + 
+            this.content = (
+                "pubsub status: <span>" + this.pubsub_feedback_msg + "</span><br/>" +
+                "pubsub_message_count: <span>" + this.pubsub_message_count + "</span><br/>" +
+                "web3_was_injected (e.g. Mist or MetaMask): <span>" + web3_was_injected + "</span> (does not work for file:// urls)<br/>" +
+                "uptime: <span>" + uptime_string + "</span><br/>" +
                 "<div></div>"
             );
         };
 
-        var getContent = function(){
-            if (content === null)
-                render();
-            return content;
-        };
+        this.getContent = function(){
+            if (this.content === null)
+                this.render();
 
-        var contentUpdated = function(){
-            if (! shouldRender()){
-
-                return;
-            }
             var content_all = (
                 '<div class="container-fluid">' +
                 '<div class="row">' +
                 '<div class="col-md-6">' +
                 '<div class="panel panel-primary">' +
                 '<div class="panel-body">' +
-                getContent() +
+                that.content +
                 '</div>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
                 '</div>');
 
-            var sorted_market_keys = get_sorted_market_keys(markets);
+            var sorted_market_keys = that.get_sorted_market_keys(that.markets);
             content_all += '<div class="container-fluid">';
             content_all += '<div class="row">';
             content_all += '<div class="col-md-6">';
             content_all += '<ul class="nav nav-pills nav-stacked">';
             sorted_market_keys.forEach(function (marketAddr, idx){
-                var market = markets[marketAddr];
+                var market = that.markets[marketAddr];
                 content_all += (
                     '<li role="presentation" class="' + ((idx===0)? 'active': '') + '">' +
-                    '<a href="#' + marketAddr + '" data-toggle="tab">' + 
+                    '<a href="#' + marketAddr + '" data-toggle="tab">' +
                     '' + marketAddr.substr(0, 12) + '... | ' +
                     'network: ' + market.network + ' | ' +
-                    'underlying: ' + market.optionChain.underlying + ' | ' + 
+                    'underlying: ' + market.optionChain.underlying + ' | ' +
                     'terminated: ' + market.market.isTerminated() + ' | ' +
-                    '</a>' + 
+                    '</a>' +
                     '</li>'
                 ); // TODO escape
             });
@@ -166,41 +163,49 @@ web3.eth.getBlock(48, function(error, result){
             content_all += '<div class="col-md-6">';
             content_all += '<div class="tab-content clearfix">';
             sorted_market_keys.forEach(function (marketAddr, idx){
-                var market = markets[marketAddr];
+                var market = that.markets[marketAddr];
                 content_all += (
                 '<div class="panel panel-default tab-pane' + ((idx===0)? ' active': '') + '" id="' + marketAddr + '">' +
                 '<div class="panel-heading">' +
                 '<a href="' + digioptions_tools.data_networks[market.network].etherscanAddressUrl.replace('{contractAddr}', marketAddr) + '">' + marketAddr.substr(0,12) + '...</a> | ' +
-                market.optionChain.underlying + ' | ' + 
-                '<a href="' + digioptions_tools.data_networks[market.network].digioptionsMarketUrl.replace('{marketAddr}', marketAddr) + '">view market</a> | ' +
+                market.optionChain.underlying + ' | ' +
+                '<a href="' + digioptions_tools.data_networks[market.network].digioptionsMarketUrl.replace('{contractContractsAddr}', market.contractContractsAddr).replace('{marketAddr}', marketAddr) + '">view market</a> | ' +
                 '</div>' +
                 '<div class="panel-body">' +
-                    'Contents for ' + marketAddr + '<br/>' + 
-                    markets[marketAddr].market.getContent() +
+                    'Contents for ' + marketAddr + '<br/>' +
+                    that.markets[marketAddr].market.getContent() +
                 '</div>' +
                 '</div>');
-            }); 
+            });
             content_all += '</div>';
             content_all += '</div>';
             content_all += '</div>';
 
-            updateContent(content_all);
+            return content_all;
         };
 
-        var deleteOldTerminatedMarkets = function(){
+        this.deleteOldTerminatedMarkets = function(){
             // try to delete old markets
-            var sorted_market_keys = get_sorted_market_keys(markets);
+            var sorted_market_keys = this.get_sorted_market_keys(this.markets);
             for (var idx in sorted_market_keys){
                 // if number is too low a delete market might be restarted
-                if ((idx > 30) && (markets[sorted_market_keys[idx]].market.isTerminated())){
-                    delete markets[sorted_market_keys[idx]];
+                if ((idx > 30) && (this.markets[sorted_market_keys[idx]].market.isTerminated())){
+                    delete this.markets[sorted_market_keys[idx]];
                 }
-            } 
+            }
         };
 
-        var getOptionChain = function(network, marketAddr){
-            var contract = web[network].eth.contract(digioptions_contracts.digioptions_market_abi).at(marketAddr);
-            contract.getOptionChain.call(function(error, result) {
+        that.getOptionChain = function(network, contractContractsAddr, marketAddr){
+            var contract = new web[network].eth.Contract(digioptions_contracts.digioptions_market_abi, marketAddr);
+
+            // TODO quick hack for web3 1.0 (pre release) contract call without arguments
+            var x = contract.methods.getOptionChain();
+            x.arguments = []; // set excplicitly arguments
+            x.call(function(error, result) {
+//            contract.methods.getOptionChain().call(function(error, result) {
+
+//            var contract = web[network].eth.contract(digioptions_contracts.digioptions_market_abi).at(marketAddr);
+//            contract.getOptionChain.call(function(error, result) {
                 if(!error){
                     var optionChain = {
                         expiration: result[0],
@@ -212,14 +217,23 @@ web3.eth.getBlock(48, function(error, result){
                     };
 
                     var key = marketAddr.toLowerCase();
-                    if (! markets[key]){
-//                        console.log("new market (real trigger)", key);
-                        markets[key] = {
-                            market: new Market(contentUpdated, network, marketAddr, optionChain),
+                    if (! that.markets[key]){
+                        //console.log("new market (real trigger)", key);
+                        that.markets[key] = {
+                            market: new Market(
+                                that.updateUI,
+                                web[network],
+                                network,
+                                digioptions_tools.data_networks[network].chainID,
+                                config.accounts[network],
+                                contract,
+                                optionChain
+                            ),
                             network: network, // for display
-                            optionChain: optionChain // e.g. for sorting via expiration
+                            optionChain: optionChain, // e.g. for sorting via expiration
+                            contractContractsAddr: contractContractsAddr
                         };
-                        contentUpdated(); // to show the new market immediately
+                        that.updateUI(); // to show the new market immediately
                     }
                 }else{
                     console.error("error getOptionChain", marketAddr, error);
@@ -227,46 +241,45 @@ web3.eth.getBlock(48, function(error, result){
             });
         };
 
-        var searchMarkets = function(network){
-            // check for new markets
-            var contractAddr = digioptions_tools.data_networks[network].contractContractsAddr[0]; // TODO
+        this.searchMarkets = function(network){
 
-            var contract = web[network].eth.contract(digioptions_contracts.digioptions_contracts_abi).at(contractAddr);
             var now = Math.floor(Date.now() / 1000);
             /* set the seconds so that even on sunday evening  we would see some (closed markets) */
-//            console.log("searchMarkets");
-            contract.getContracts.call(false, now - 3600 * 74, function(error, result) {
-                if(!error){
-                    var i;
-                    result = result.filter(function(x){return x!='0x0000000000000000000000000000000000000000';});
-                    for (i=0 ; i < result.length ; i++){
-                        var marketAddr = result[i];
-                        var key = marketAddr.toLowerCase();
-                        if (! markets[key]){
-                            console.log("new market (getOptionChain)", key);
-                    
-                                getOptionChain(network, marketAddr);
+
+            digioptions_tools.data_networks[network].contractContractsAddr.forEach(function (contractContractsAddr){
+
+                // check for new markets
+                var contract = new web[network].eth.Contract(digioptions_contracts.digioptions_contracts_abi, contractContractsAddr);
+                contract.methods.getContracts(false, now - 3600 * 74).call(function(error, result) {
+
+    //            var contract = web[network].eth.contract(digioptions_contracts.digioptions_contracts_abi).at(contractAddr);
+    //            console.log(contract);
+    //            contract.getContracts.call(false, now - 3600 * 74, function(error, result) {
+                    if(!error){
+                        var i;
+                        result = result.filter(function(x){return x!='0x0000000000000000000000000000000000000000';});
+                        for (i=0 ; i < result.length ; i++){
+                            var marketAddr = result[i];
+                            var key = marketAddr.toLowerCase();
+                            if (! that.markets[key]){
+                                //console.log("new market (getOptionChain)", key);
+                                that.getOptionChain(network, contractContractsAddr, marketAddr);
+                            }
                         }
+                    }else{
+                        console.error("error getContracts", error);
                     }
-                }else{
-                    console.error("error getContracts", error);
-                }
+                });
             });
         };
 
-        var searchMarketsAllNetworks = function(){
+        this.searchMarketsAllNetworks = function(){
             config.networks.forEach(function (network){
-                searchMarkets(network);
+                that.searchMarkets(network);
             });
         };
 
-        searchMarketsAllNetworks();
-        setInterval(function(){
-            deleteOldTerminatedMarkets();
-            searchMarketsAllNetworks();
-            }, 20 * 60 * 1000);
-
-        var setupPubsub = function(){
+        this.setupPubsub = function(){
             var pubsub = new PubSub(config.pubsub_protocol, config.pubsub_host);
 
 //            pubsub.debug = true;
@@ -291,30 +304,39 @@ web3.eth.getBlock(48, function(error, result){
         //            $('#message').append(p);
 //                    console.log("xx", data[i]);
                 }
-                pubsub_message_count++;
-                updateUI();
+                that.pubsub_message_count++;
+                that.updateUI();
             };
             pubsub.feedback = function(msg, col, connection_ok){
-                pubsub_feedback_msg = msg;
-                pubsub_feedback_col = col;
-                pubsub_feedback_connection_ok = connection_ok;
-                updateUI();
+                that.pubsub_feedback_msg = msg;
+                that.pubsub_feedback_col = col;
+                that.pubsub_feedback_connection_ok = connection_ok;
+                that.updateUI();
             };
 
             pubsub.connect();
         };
 
-        setupPubsub();
+        this.start = function() {
+            this.searchMarketsAllNetworks();
+            setInterval(function(){
+                that.deleteOldTerminatedMarkets();
+                that.searchMarketsAllNetworks();
+                }, 20 * 60 * 1000);
 
-        setInterval(
-            function(){
-                // this refreshes the 'uptime' fiels to show that everything is running
-                updateUI();
-            },
-            10000
-        );
-    };
-    
-    return {'main': main};
+
+            this.setupPubsub();
+
+            setInterval(
+                function(){
+                    // this refreshes the 'uptime' fiels to show that everything is running
+                    that.updateUI();
+                },
+                10000
+            );
+        };
+    }
+
+    return {'Main': Main};
 });
 

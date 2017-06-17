@@ -26,8 +26,10 @@
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_market_abi.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_market_bin.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/index.js"></script>
-    <script type="text/javascript" src="node_modules/web3/dist/web3.min.js"></script>
+    <script type="text/javascript" src="js/buffer.js"></script>
+    <script type="text/javascript" src="js/web3.js"></script>
 
+    <script type="text/javascript" src="js/utils.js"></script>
     <script type="text/javascript" src="js/config.js"></script>
     <script type="text/javascript" src="js/market.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
@@ -51,21 +53,24 @@
 <script type="text/javascript">
 //<![CDATA[
 
-    var shouldRender = function(){
-        return true;
-    }
-
-    var updateContent = function(html){
-        var elm_content = document.getElementById("content");
-        var root = React.createElement('div', {}, ReactHtmlParser.default(html));
-        ReactDOM.render(root, elm_content);
-    };
-    
-    var main_wrapper = function(main, shouldRender, updateContent){
+    var main_wrapper = function(Main){
         // we may need to wait until 'load' event before we can
         // check if metamask/mist has injected 'web3'
+
+        var main;
+
+        var contentUpdated = function(){
+            if (! main)
+                return;
+            var html = main.getContent();
+            var elm_content = document.getElementById("content");
+            var root = React.createElement('div', {}, ReactHtmlParser.default(html));
+            ReactDOM.render(root, elm_content);
+        };
+    
         window.addEventListener('load', function() {
-            main(shouldRender, updateContent);
+            main = new Main(contentUpdated);
+            main.start();
         });
     };
 
@@ -79,7 +84,7 @@
                 "strophe.js": "node_modules/strophe.js/strophe",
                 "digioptions-tools.js": "node_modules/digioptions-tools.js/index",
                 "digioptions-contracts.js": "node_modules/digioptions-contracts.js/index",
-                "web3": "node_modules/web3/dist/web3",
+                "web3": "js/web3",
                 // TODO following should be imported relatively
                 "pubsub": "node_modules/digioptions-tools.js/pubsub",
                 "normalize_order": "node_modules/digioptions-tools.js/normalize_order",
@@ -92,15 +97,14 @@
                 "digioptions_market_abi": "node_modules/digioptions-contracts.js/digioptions_market_abi",
                 "digioptions_market_bin": "node_modules/digioptions-contracts.js/digioptions_market_bin"
 
-//                "web3/requestmanager": "node_modules/web3/lib/web3/requestmanager"
             }
         });
 
-        require(['main'], function(main) {
-            main_wrapper(main, shouldRender, updateContent);
+        require(['js/main'], function(Main) {
+            main_wrapper(Main);
         });
     } else {
-        main_wrapper(main, shouldRender, updateContent);
+        main_wrapper(Main);
     };
 //]]>
 </script>

@@ -1,23 +1,24 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.1.3",
+  "version": "0.1.7",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
   "author": {
-    "name": "Ulf Bartel", 
+    "name": "Ulf Bartel",
     "email": "elastic.code@gmail.com"
   },
   "scripts": {
     "serve": "http-server . -a 127.0.0.1 -p 8888 -c-1"
   },
   "files": [
-    "config.js",
-    "COPYING",
-    "css",
+    "js/buffer.js",
+    "js/utils.js",
+    "js/config.js",
+    "LICENSE",
     "img/digioptions.png",
-    "main.js",
-    "market.js",
+    "js/main.js",
+    "js/market.js",
     "README.md",
     "trading-browser.html",
     "trading-node.js"
@@ -33,7 +34,7 @@
   ],
   "node_deb": {
     "init": "auto",
-    "maintainer": "mail@digioptions.com",
+    "maintainer": "elastic.code@gmail.com",
     "install_strategy": "copy",
     "entrypoints": {
       "daemon": "trading-node.js 8100 8101 127.0.0.1"
@@ -52,8 +53,9 @@
     "react-dom": "^15.0.2",
     "react-html-parser": "^1.0.3",
     "requirejs": "^2.3.3",
-    "web3": "^0.19.0",
+    "web3": "git+https://github.com/ethereum/web3.js.git#d9cc15bff6baa011f2332f2c18b15a1de9c1b604",
     "websocket.io": "0.2.1",
+    "xhr2": "^0.1.4",
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {

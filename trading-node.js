@@ -2,8 +2,11 @@
 /*jshint multistr: true */
 /*jshint esversion: 6 */
 
-var main = require('./js/main.js');
+var trading = function(){
+
+var Main = require('./js/main.js');
 var config = require('./js/config.js');
+var package = require('./package.json');
 
 //var host = '127.0.0.1'; // only accessible via loopback device (localhost)
 //var host = '0.0.0.0'; // Attention: this might be expose data to others on the network
@@ -14,6 +17,7 @@ var host = process.argv.length >= 5 ? parseInt(process.argv[4]) : '127.0.0.1';
 
 var canonicalHost = host === '0.0.0.0' ? '127.0.0.1' : host;
 
+var main;
 var sockets = [],
     socketServer = null;
 var ws = require('websocket.io'),
@@ -40,7 +44,7 @@ var XMLHttpRequestOrig = require('xmlhttprequest/lib/XMLHttpRequest.js').XMLHttp
 var XMLHttpRequest = function () {
     /*  create object with original constructor  */
     var xhr = new XMLHttpRequestOrig();
-  
+
     var onreadystatechange = null;
 
     /*  intercept "open" method to modify onreadystatechange  */
@@ -124,7 +128,7 @@ httpDomain.run(function () {
             var html = `<!DOCTYPE html>
 <html dir="ltr" lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>digioptions-trader.js</title> 
+    <title>digioptions-trader.js</title>
     <meta charset=utf-8 />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -141,6 +145,7 @@ httpDomain.run(function () {
                     <img alt="digioptions.com" style="height: 25px" src="img/digioptions.png" />
                 </a>
 <p class="navbar-text">nodejs connection status: <span id="ws-connection-status">not connected</span></p>
+<p class="navbar-text">version: ${package.version}</p>
             </div>
         </div>
     </nav>
@@ -247,7 +252,7 @@ socketDomain.on('error', function(err) {
     console.log('Error caught in socket domain:' + err);
 });
 
-socketDomain.run(function() { 
+socketDomain.run(function() {
     socketServer = ws.listen(port_websocket);
 
     socketServer.on('listening',function(){
@@ -256,54 +261,38 @@ socketDomain.run(function() {
 
     socketServer.on('connection', function (socket) {
 
-        console.log('Connected to client');
+        //console.log('Connected to client');
         sockets.push(socket);
 
-        socket.on('message', function (data) { 
-            console.log('Message received:', data);
+        socket.on('message', function (data) {
+            //console.log('Message received:', data);
         });
 
         socket.on('close', function () {
             try {
                 socket.close();
                 socket.destroy();
-                console.log('Socket closed!');                       
+                //console.log('Socket closed!');
                 for (var i = 0; i < sockets.length; i++) {
                     if (sockets[i] == socket) {
                         sockets.splice(i, 1);
-                        console.log('Removing socket from collection. Collection length: ' + sockets.length);
+                        //console.log('Removing socket from collection. Collection length: ' + sockets.length);
                         break;
                     }
                 }
-                    
             }
             catch (e) {
-                console.log(e);
+                //console.log(e);
             }
         });
 
-    });  
-});      
-
-var shouldRender = function(){
-    return sockets.length > 0;
-};
-
-var updateContent = function(data) {
-    if (sockets.length) {
-        //console.log('Sending data...');
-        for(i=0;i<sockets.length;i++)
-        {
-            try {
-                sockets[i].send(data);
-            }   
-            catch (e)
-            {
-                console.log(e);                
-            }
+        // send immediately first update
+        if (main){
+            socket.send(main.getContent());
         }
-    }
-};
+
+    });
+});
 
 console.log("serving on:");
 
@@ -321,8 +310,40 @@ else {
     });
 }
 
-console.log("Hit CTRL-C to stop the server");
+var contentUpdated = function(){
+    if (sockets.length === 0){
+        return;
+    }
+
+    if (! main)
+        return;
+    data = main.getContent();
+
+    //console.log('Sending data...');
+    for(i=0;i<sockets.length;i++)
+    {
+        try {
+            sockets[i].send(data);
+        }
+        catch (e)
+        {
+            console.log(e);
+        }
+    }
+};
 
 //start application
-main(shouldRender, updateContent);
+console.log("Hit CTRL-C to stop the server");
+main = new Main(contentUpdated);
+main.start();
+contentUpdated();// trigger first update
+};
 
+
+if (require.main === module) {
+    //console.log('called directly');
+    trading();
+} else {
+    //console.log('required as a module');
+    module.exports = trading;
+}

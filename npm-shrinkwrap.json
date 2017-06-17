@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "dependencies": {
     "@types/node": {
       "version": "6.0.78",
@@ -91,11 +91,6 @@
       "resolved": "https://registry.npmjs.org/bcrypt-pbkdf/-/bcrypt-pbkdf-1.0.1.tgz",
       "optional": true
     },
-    "bignumber.js": {
-      "version": "2.0.7",
-      "from": "git+https://github.com/debris/bignumber.js.git#94d7146671b9719e00a09c29b01a691bc85048c2",
-      "resolved": "git+https://github.com/debris/bignumber.js.git#94d7146671b9719e00a09c29b01a691bc85048c2"
-    },
     "boom": {
       "version": "2.10.1",
       "from": "boom@>=2.0.0 <3.0.0",
@@ -178,19 +173,14 @@
       "dev": true
     },
     "create-react-class": {
-      "version": "15.5.4",
+      "version": "15.6.0",
       "from": "create-react-class@>=15.5.2 <16.0.0",
-      "resolved": "https://registry.npmjs.org/create-react-class/-/create-react-class-15.5.4.tgz"
+      "resolved": "https://registry.npmjs.org/create-react-class/-/create-react-class-15.6.0.tgz"
     },
     "cryptiles": {
       "version": "2.0.5",
       "from": "cryptiles@>=2.0.0 <3.0.0",
       "resolved": "https://registry.npmjs.org/cryptiles/-/cryptiles-2.0.5.tgz"
-    },
-    "crypto-js": {
-      "version": "3.1.8",
-      "from": "crypto-js@>=3.1.4 <4.0.0",
-      "resolved": "https://registry.npmjs.org/crypto-js/-/crypto-js-3.1.8.tgz"
     },
     "cssom": {
       "version": "0.3.2",
@@ -243,7 +233,7 @@
     "digioptions-tools.js": {
       "version": "0.0.3",
       "from": "git+https://github.com/berlincode/digioptions-tools.js.git",
-      "resolved": "git+https://github.com/berlincode/digioptions-tools.js.git#b32142c76b84aef18c587d779ef7210afc9d2023"
+      "resolved": "git+https://github.com/berlincode/digioptions-tools.js.git#5a8cf952c27fd8989ea1a3f1abf5d881aef67f08"
     },
     "dom-serializer": {
       "version": "0.1.0",
@@ -955,11 +945,6 @@
       "resolved": "https://registry.npmjs.org/url-join/-/url-join-2.0.2.tgz",
       "dev": true
     },
-    "utf8": {
-      "version": "2.1.2",
-      "from": "utf8@>=2.1.1 <3.0.0",
-      "resolved": "https://registry.npmjs.org/utf8/-/utf8-2.1.2.tgz"
-    },
     "util-deprecate": {
       "version": "1.0.2",
       "from": "util-deprecate@>=1.0.1 <1.1.0",
@@ -976,9 +961,9 @@
       "resolved": "https://registry.npmjs.org/verror/-/verror-1.3.6.tgz"
     },
     "web3": {
-      "version": "0.19.0",
-      "from": "web3@>=0.19.0 <0.20.0",
-      "resolved": "https://registry.npmjs.org/web3/-/web3-0.19.0.tgz"
+      "version": "1.0.0-beta",
+      "from": "git+https://github.com/ethereum/web3.js.git#d9cc15bff6baa011f2332f2c18b15a1de9c1b604",
+      "resolved": "git+https://github.com/ethereum/web3.js.git#d9cc15bff6baa011f2332f2c18b15a1de9c1b604"
     },
     "webidl-conversions": {
       "version": "4.0.1",
@@ -1027,11 +1012,6 @@
       "version": "0.4.20",
       "from": "ws@0.4.20",
       "resolved": "https://registry.npmjs.org/ws/-/ws-0.4.20.tgz"
-    },
-    "xhr2": {
-      "version": "0.1.4",
-      "from": "xhr2@*",
-      "resolved": "https://registry.npmjs.org/xhr2/-/xhr2-0.1.4.tgz"
     },
     "xml-name-validator": {
       "version": "2.0.1",
