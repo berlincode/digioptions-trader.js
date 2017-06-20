@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -12,11 +12,13 @@
     "serve": "http-server . -a 127.0.0.1 -p 8888 -c-1"
   },
   "files": [
+    "js/web3.js",
     "js/buffer.js",
     "js/utils.js",
     "js/config.js",
     "LICENSE",
     "img/digioptions.png",
+    "img/github_ribbon.png",
     "js/main.js",
     "js/market.js",
     "README.md",
@@ -37,7 +39,7 @@
     "maintainer": "elastic.code@gmail.com",
     "install_strategy": "copy",
     "entrypoints": {
-      "daemon": "trading-node.js 8100 8101 127.0.0.1"
+      "daemon": "trading-node.js 8100 127.0.0.1"
     },
     "user": "digioptions-trader",
     "group": "digioptions-trader"
@@ -49,6 +51,7 @@
     "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
     "jquery": "^3.2.1",
     "jsdom": "^11.0.0",
+    "jsonwebtoken": "^7.4.1",
     "react": "^15.0.2",
     "react-dom": "^15.0.2",
     "react-html-parser": "^1.0.3",
