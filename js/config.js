@@ -49,8 +49,8 @@
     //pubsub_protocol: 'http', /* http bosh */
     //pubsub_host: 'ulf',
     // TODO
-    pubsub_protocol: 'ws', /* websocket */
-    pubsub_host: 'xmpp_ropsten.digioptions.com',
+    pubsub_protocol: 'wss', /* websocket */
+    pubsub_host: 'ropsten.xmpp.digioptions.com',
 
 
     // optional basic authentication for nodejs server

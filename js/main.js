@@ -57,6 +57,7 @@
     this.pubsub_feedback_connection_ok = false;
     this.start_time = new Date();
     this.markets = {};
+    this.pubsub = undefined;
     var web = {}; // contains web3 for each network
 
     this.content = null;
@@ -186,6 +187,12 @@
       }
     };
 
+    this.orderBookPublish = function(data_array){
+      if (that.pubsub){
+        that.pubsub.publish(data_array);
+      }
+    };
+
     that.getOptionChain = function(network, contractContractsAddr, marketAddr){
       var contract = new web[network].eth.Contract(digioptions_contracts.digioptions_market_abi, marketAddr);
 
@@ -220,7 +227,8 @@
                 digioptions_tools.data_networks[network].chainID,
                 config.accounts[network],
                 contract,
-                optionChain
+                optionChain,
+                that.orderBookPublish
               ),
               network: network, // for display
               optionChain: optionChain, // e.g. for sorting via expiration
@@ -306,11 +314,17 @@
         that.pubsub_feedback_connection_ok = connection_ok;
         that.updateUI();
       };
+      //pubsub.disconnect = function(){
+      //  that.pubsub = undefined;
+      //};
 
       pubsub.connect();
+      return pubsub;
     };
 
     this.start = function() {
+      this.pubsub = this.setupPubsub();
+
       this.searchMarketsAllNetworks();
       setInterval(function(){
         that.deleteOldTerminatedMarkets();
@@ -318,7 +332,6 @@
       }, 20 * 60 * 1000);
 
 
-      this.setupPubsub();
 
       setInterval(
         function(){

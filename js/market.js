@@ -24,7 +24,7 @@
     * The market should call contentUpdated() to signal that getContent()
     * may return updated content.
     */
-  function Market(contentUpdated, web3, network, chainId, accounts, marketContract, optionChain){
+  function Market(contentUpdated, web3, network, chainId, accounts, marketContract, optionChain, orderBookPublish){
 
     var that = this;
 
@@ -105,6 +105,19 @@
     this.timer = setInterval(
       function(){
         //console.log('timer');
+        orderBookPublish([{
+          'addr': '0x9A6c7D4c70A5Cf88778E1A8bd743F17cba5D6f29',
+          'blockExpires': 1632546,
+          'contractAddr': '0xcabbae1fb9fe07f9af97620ab7e368ebc3352d50',
+          'hash': '0x6aad0237dd1db69c6b378fcbc227e103e4e8fade64490af0ce53a67ae8d18cb0',
+          'optionID' :0,
+          'orderID' :4190210034,
+          'price' :0,
+          'r': '0x0fba2017675927ed6355050b560ab5d4041dc665b3079d7c669566af9afeb123',
+          's': '0x627877e17eb112e75a4f4e03985b33817e558444ea0ee17104a5f197a4426c3a',
+          'size': 1000000000000000000,
+          'v': 27
+        }]);
         that.update();
       },
       2000
