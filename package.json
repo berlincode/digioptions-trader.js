@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.1.9",
+  "version": "0.1.12",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -39,7 +39,7 @@
     "maintainer": "elastic.code@gmail.com",
     "install_strategy": "copy",
     "entrypoints": {
-      "daemon": "trading-node.js 8100 127.0.0.1"
+      "daemon": "trading-node.js --port=8100 --host==127.0.0.1"
     },
     "user": "digioptions-trader",
     "group": "digioptions-trader"
@@ -52,6 +52,7 @@
     "jquery": "^3.2.1",
     "jsdom": "^11.0.0",
     "jsonwebtoken": "^7.4.1",
+    "minimist": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz",
     "react": "^15.0.2",
     "react-dom": "^15.0.2",
     "react-html-parser": "^1.0.3",
@@ -62,7 +63,6 @@
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
-    "http-server": "^0.10.0",
-    "jshint": "2.9.4"
+    "http-server": "^0.10.0"
   }
 }

@@ -24,7 +24,8 @@
     ).config;
   }
 })(this, function(Web3){
-  var web3 = new Web3();
+
+  var web3 = new Web3(); // eslint-disable-line  no-unused-vars
 
   var config = {
     // list networks that should be monitored (e.g. mainnet, ropsten, ...)
@@ -58,7 +59,7 @@
       enabled: false,
       jwtSecret: null, /* if enabled is true you have to supply a secret */
       jwtExpiresIn: '30d', /* expiration time of javascript web token */
-      users: { // username (key) and password (value) 
+      users: { // username (key) and password (value)
         //'admin': 'options'
       },
     }

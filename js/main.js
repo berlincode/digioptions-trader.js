@@ -7,19 +7,22 @@
         './config',
         'digioptions-tools.js',
         'digioptions-contracts.js',
+        './utils',
         'web3',
         './market'
       ], function (
         config,
-        digioptions_tools,
-        digioptions_contracts,
+        digioptionsTools,
+        digioptionsContracts,
+        utils,
         Web3,
         Market
       ) {
         return factory(
           config,
-          digioptions_tools,
-          digioptions_contracts,
+          digioptionsTools,
+          digioptionsContracts,
+          utils,
           //root.Web3 /* TODO: quick hack for web3 before 1.0 - we use global Web3, because require('web3') returns BigNumber - see https://github.com/ethereum/web3.js/issues/280 */
           Web3,
           Market
@@ -30,6 +33,7 @@
       require('./config.js'),
       require('digioptions-tools.js'),
       require('digioptions-contracts.js'),
+      require('./utils.js'),
       require('web3'),
       require('./market.js')
     ).Main;
@@ -37,15 +41,16 @@
     // Global (browser)
     root.Main = factory(
       root.config,
-      root.digioptions_tools,
-      root.digioptions_contracts,
+      root.digioptionsTools,
+      root.digioptionsContracts,
+      root.utils,
       root.Web3,
       root.Market
     ).Main;
   }
-})(this, function(config, digioptions_tools, digioptions_contracts, Web3, Market){
-  var PubSub = digioptions_tools.PubSub;
-  var normalize_order = digioptions_tools.normalize_order;
+})(this, function(config, digioptionsTools, digioptionsContracts, utils, Web3, Market){
+  var PubSub = digioptionsTools.PubSub;
+  var normalize_order = digioptionsTools.normalize_order;
   //var web3_was_injected;
 
   function Main(contentUpdated){
@@ -71,7 +76,7 @@
     //    // set the provider you want from Web3.providers
     //    web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
     config.networks.forEach(function (network){
-      web[network] = new Web3(new Web3.providers.HttpProvider(digioptions_tools.data_networks[network].provider));
+      web[network] = new Web3(digioptionsTools.getProvider(Web3, digioptionsTools.data_networks[network]));
     });
     //web3_was_injected = false;
     //}
@@ -158,9 +163,17 @@
         content_all += (
           '<div class="panel panel-default tab-pane' + ((idx===0)? ' active': '') + '" id="' + marketAddr + '">' +
           '<div class="panel-heading">' +
-          '<a href="' + digioptions_tools.data_networks[market.network].etherscanAddressUrl.replace('{contractAddr}', marketAddr) + '">' + marketAddr.substr(0,12) + '...</a> | ' +
+          (digioptionsTools.data_networks[market.network].etherscanAddressUrl?
+            ('<a href="' + digioptionsTools.data_networks[market.network].etherscanAddressUrl.replace('{contractAddr}', marketAddr) + '">' + marketAddr.substr(0,12) + '...</a> | ')
+            :
+            ''
+          ) +
           market.optionChain.underlying + ' | ' +
-          '<a href="' + digioptions_tools.data_networks[market.network].digioptionsMarketUrl.replace('{contractContractsAddr}', market.contractContractsAddr).replace('{marketAddr}', marketAddr) + '">view market</a> | ' +
+          (digioptionsTools.data_networks[market.network].digioptionsMarketUrl?
+            ('<a href="' + digioptionsTools.getUrlBase() + digioptionsTools.data_networks[market.network].digioptionsMarketUrl.replace('{contractContractsAddr}', market.contractContractsAddr).replace('{marketAddr}', marketAddr) + '">view market</a> | ')
+            :
+            ''
+          ) +
           '</div>' +
           '<div class="panel-body">' +
           'Contents for ' + marketAddr + '<br/>' +
@@ -194,7 +207,7 @@
     };
 
     that.getOptionChain = function(network, contractContractsAddr, marketAddr){
-      var contract = new web[network].eth.Contract(digioptions_contracts.digioptions_market_abi, marketAddr);
+      var contract = new web[network].eth.Contract(digioptionsContracts.digioptions_market_abi, marketAddr);
 
       // TODO quick hack for web3 1.0 (pre release) contract call without arguments
       var x = contract.methods.getOptionChain();
@@ -203,7 +216,7 @@
         /*
       contract.methods.getOptionChain().call(function(error, result) {
 
-      var contract = web[network].eth.contract(digioptions_contracts.digioptions_market_abi).at(marketAddr);
+      var contract = web[network].eth.contract(digioptionsContracts.digioptions_market_abi).at(marketAddr);
       contract.getOptionChain.call(function(error, result) {
       */
         if(!error){
@@ -224,7 +237,7 @@
                 that.updateUI,
                 web[network],
                 network,
-                digioptions_tools.data_networks[network].chainID,
+                digioptionsTools.data_networks[network].chainID,
                 config.accounts[network],
                 contract,
                 optionChain,
@@ -247,14 +260,14 @@
       var now = Math.floor(Date.now() / 1000);
       /* set the seconds so that even on sunday evening  we would see some (closed markets) */
 
-      digioptions_tools.data_networks[network].contractContractsAddr.forEach(function (contractContractsAddr){
+      digioptionsTools.data_networks[network].contractContractsAddr.forEach(function (contractContractsAddr){
 
-        //var contract = web[network].eth.contract(digioptions_contracts.digioptions_contracts_abi).at(contractAddr),
+        //var contract = web[network].eth.contract(digioptionsContracts.digioptions_contracts_abi).at(contractAddr),
         //console.log(contract);
         //contract.getContracts.call(false, now - 3600 * 74, function(error, result) {
-        
+
         // check for new markets
-        var contract = new web[network].eth.Contract(digioptions_contracts.digioptions_contracts_abi, contractContractsAddr);
+        var contract = new web[network].eth.Contract(digioptionsContracts.digioptions_contracts_abi, contractContractsAddr);
         contract.methods.getContracts(false, now - 3600 * 74).call(function(error, result) {
           if(!error){
             var i;
@@ -303,7 +316,16 @@
         for (i=0 ; i < data.length ; i++){
           //var p = $('<p>').text(JSON.stringify(data[i]));
           //$('#message').append(p);
-          //console.log('xx', data[i]);
+          var order = data[i];
+          var key = digioptionsTools.normalize_order(order);
+          if (key) {
+
+            if (utils.verifyOrder(order)){
+              //console.log('ok', i);
+            }else{
+              console.log('error in order verification:', order);
+            }
+          }
         }
         that.pubsub_message_count++;
         that.updateUI();

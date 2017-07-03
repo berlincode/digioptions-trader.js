@@ -1,4 +1,4 @@
 node_modules
 README.html
-*custom.*
+*.custom*
 dist

@@ -11,8 +11,9 @@ var trading = function() {
   //var host = '127.0.0.1'; // only accessible via loopback device (localhost)
   //var host = '0.0.0.0'; // Attention: this might be expose data to others on the network
   //var host = '192.168.2.110'; // Attention: this might be expose data to others on the network
-  var port = process.argv.length >= 3 ? parseInt(process.argv[2]) : 8000;
-  var host = process.argv.length >= 4 ? parseInt(process.argv[3]) : '127.0.0.1';
+  var argv = require('minimist')(process.argv.slice(2));
+  var port = argv.port || 8888;
+  var host = argv.host || '127.0.0.1';
 
   var canonicalHost = host === '0.0.0.0' ? '127.0.0.1' : host;
 
@@ -142,7 +143,7 @@ var trading = function() {
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
-            <a class="navbar-brand" href="http://www.digioptions.com">
+            <a class="navbar-brand" href="https://www.digioptions.com">
                 <img alt="digioptions.com" style="height: 25px" src="img/digioptions.png" />
             </a>
 <p class="navbar-text">
