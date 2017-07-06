@@ -53,6 +53,16 @@
     pubsub_protocol: 'wss', /* websocket */
     pubsub_host: 'ropsten.xmpp.digioptions.com',
 
+    /* list/try to start markets that are expired no more than 74 hours ago */
+    marketsListExpiredSeconds: 74 * 60 * 60,
+
+    /* unlist/remove markets that are expired more that 120 hours ago - this
+    setting should be higher that 'marketsList' to prevent the restart of markets
+    that are alreasy removed from memory */
+    marketsDeleteExpiredSeconds: 120 * 60 * 60,
+
+    /* keep at least 20 markets before deleting old markets */
+    marketsKeepMin: 20,
 
     // optional basic authentication for nodejs server
     basicAuth:{

@@ -41,7 +41,7 @@
     <nav class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="http://www.digioptions.com">
+                <a class="navbar-brand" href="https://www.digioptions.com">
                     <img alt="digioptions.com" style="height: 25px" src="img/digioptions.png" />
                 </a>
             </div>
@@ -53,25 +53,44 @@
 
 <script type="text/javascript">
 //<![CDATA[
+    var args = (function(){
+    // parse browser's query string append parameters
+    var args = {};
+    var query = window.location.search.replace(/^\?/, '');
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        args[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+    }
+    return args;
+    })();
 
-    var main_wrapper = function(Main){
+    var main_wrapper = function(main){
         // we may need to wait until 'load' event before we can
         // check if metamask/mist has injected 'web3'
 
-        var main;
+        var monitor;
 
         var contentUpdated = function(){
-            if (! main)
+            if (! monitor)
                 return;
-            var html = main.getContent();
+            var html = monitor.getContent();
             var elm_content = document.getElementById("content");
             var root = React.createElement('div', {}, ReactHtmlParser.default(html));
             ReactDOM.render(root, elm_content);
         };
     
         window.addEventListener('load', function() {
-            main = new Main(contentUpdated);
-            main.start();
+            var network = main.networkConfigured(args.network);
+            if (network){
+                monitor = new main.Monitor(contentUpdated, network);
+                monitor.start();
+            } else {
+                document.getElementById("content").innerHTML = (
+                    main.navTabs() +
+                    'invalid network'
+                );
+            }
         });
     };
 
@@ -101,11 +120,11 @@
             }
         });
 
-        require(['js/main'], function(Main) {
-            main_wrapper(Main);
+        require(['js/main'], function(main) {
+            main_wrapper(main);
         });
     } else {
-        main_wrapper(Main);
+        main_wrapper(main);
     };
 //]]>
 </script>

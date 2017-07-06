@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // vim: sts=2:ts=2:sw=2
 /* eslint-env node, es6 */
+/* eslint-disable no-useless-escape */
 
 var trading = function() {
 
-  var Main = require('./js/main.js');
+  var main = require('./js/main.js');
   var config = require('./js/config.js');
   var package = require('./package.json');
 
@@ -17,8 +18,12 @@ var trading = function() {
 
   var canonicalHost = host === '0.0.0.0' ? '127.0.0.1' : host;
 
-  var main;
-  var sockets = [];
+  var monitors = {};
+  var sockets = {};
+  config.networks.forEach(function (network){
+    //monitors[network] = .. // TODO
+    sockets[network] = [];
+  });
   var ws = require('websocket.io'),
     http = require('http'),
     auth = require('basic-auth'),
@@ -28,9 +33,7 @@ var trading = function() {
     os = require('os'),
     jwt = require('jsonwebtoken');
 
-  var content = 'loading...';
-
-  // TODO fake window.console? 
+  // TODO fake window.console?
   // fake browser document and window for strophe.js
   var JSDOM          = require('jsdom').JSDOM;
   document = new JSDOM('test').window.document; // eslint-disable-line no-global-assign
@@ -39,12 +42,12 @@ var trading = function() {
   // create a XMLHttpRequest object which can parse xml via jsom and sets responseXML
   var XMLHttpRequestOrig = require('xmlhttprequest/lib/XMLHttpRequest.js').XMLHttpRequest;
   var XMLHttpRequest = function () {
-    /*  create object with original constructor  */
+    /* create object with original constructor */
     var xhr = new XMLHttpRequestOrig();
 
     var onreadystatechange = null;
 
-    /*  intercept 'open' method to modify onreadystatechange  */
+    /* intercept 'open' method to modify onreadystatechange */
     var open_orig = xhr.open;
     xhr.open = function () {
       onreadystatechange = xhr.onreadystatechange;
@@ -52,14 +55,19 @@ var trading = function() {
       return open_orig.apply(xhr, arguments);
     };
 
-    /*  hook into the processing  */
+    /* hook into the processing */
     var addEventListener_orig = xhr.addEventListener;
     xhr.addEventListener('readystatechange', function () {
       if (xhr.readyState === this.DONE) {
 
         var JSDOM = require('jsdom').JSDOM;
-        var dom = new JSDOM(xhr.responseText, {contentType: 'text/xml'});
-        xhr.responseXML = dom.window.document;
+        try {
+          var dom = new JSDOM(xhr.responseText, {contentType: 'text/xml'});
+          xhr.responseXML = dom.window.document;
+        } catch(err) {
+          // maybe no xml content? (Error: socket hang up)
+          console.log('xml parse error:', xhr.responseText);
+        }
 
         if (onreadystatechange !== null)
           onreadystatechange();
@@ -75,6 +83,7 @@ var trading = function() {
 
     //var removeEventListener_orig = xhr.addEventListener;
     //this.removeEventListener = function(event, callback) {
+    //  console.log('removeEventListener');
     //  if (event !== 'readystatechange')
     //    return removeEventListener_orig(event, callback);
 
@@ -156,13 +165,25 @@ status: <span id="ws-connection-status">not connected</span>
 <!--
 <a href="https://github.com/berlincode/digioptions-trader.js"><img style="z-index: 9999; position: absolute; top: 0; right: 0; border: 0;" src="img/github_ribbon.png" alt="Fork me on GitHub" /></a>
 -->
-<div id="content" style="padding-top: 60px;">${content}</div>
+<div id="content" style="padding-top: 60px;">loading ...</div>
 <script type="text/javascript" src="node_modules/react/dist/react.min.js"></script>
 <script type="text/javascript" src="node_modules/react-dom/dist/react-dom.min.js"></script>
 <script type="text/javascript" src="node_modules/react-html-parser/dist/react-html-parser.min.js"></script>
 <script type="text/javascript">
 //<![CDATA[
 (function(host, token) {
+var args = (function(){
+  // parse browser's query string append parameters
+  var args = {};
+  var query = window.location.search.replace(/^\\?/, '');
+  var vars = query.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    args[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+  }
+  return args;
+})();
+
 var connect = function(){
     var connection = new WebSocket(host);
     var elm_content = document.getElementById("content");
@@ -197,6 +218,7 @@ var connect = function(){
         connection.send(
             JSON.stringify({
                 type: 'authenticate',
+                network: args.network,
                 payload: { token: token }
             })
         );
@@ -264,11 +286,11 @@ connect();
 
   var server_ws = ws.attach(server);
 
-  var socket_enable = function(socket){
-    sockets.push(socket);
+  var socket_enable = function(socket, network){
+    sockets[network].push(socket);
     // send first update immediately
-    if (main){
-      socket.send(main.getContent());
+    if (monitors[network]){
+      socket.send(monitors[network].getContent());
     }
   };
 
@@ -279,17 +301,21 @@ connect();
       try {
         var data = JSON.parse(message);
         if (data.type === 'authenticate') {
-          if (config.basicAuth.enabled){
+          var network = data.network || config.networks[0];
+
+          if (! main.networkConfigured(network)){
+            socket.send(main.navTabs() + 'invalid network');
+          } else if (config.basicAuth.enabled){
             jwt.verify(data.payload.token, config.basicAuth.jwtSecret, function (err, decoded) {
 
               if ((! err) && (decoded.name) && config.basicAuth.users[decoded.name]){
-                socket_enable(socket);
+                socket_enable(socket, network);
                 //console.log('auth success');
               }
             });
           } else {
             // no authentication necessary
-            socket_enable(socket);
+            socket_enable(socket, network);
           }
         }
       } catch(err) {
@@ -302,13 +328,15 @@ connect();
         socket.close();
         socket.destroy();
         //console.log('Socket closed!');
-        for (var i = 0; i < sockets.length; i++) {
-          if (sockets[i] == socket) {
-            sockets.splice(i, 1);
-            //console.log('Removing socket from collection. Collection length: ' + sockets.length);
-            break;
+        config.networks.forEach(function (network){
+          for (var i = 0; i < sockets[network].length; i++) {
+            if (sockets[network][i] == socket) {
+              sockets[network].splice(i, 1);
+              //console.log('Removing socket from collection. Collection length: ' + sockets.length);
+              break;
+            }
           }
-        }
+        });
       }
       catch (e) {
         //console.log(e);
@@ -333,17 +361,17 @@ connect();
     });
   }
 
-  var contentUpdated = function(){
-    if ((sockets.length === 0) || (! main))
+  var contentUpdated = function(network){
+    if ((sockets[network].length === 0) || (! monitors[network]))
       return;
-   
-    var data = main.getContent();
+ 
+    var data = monitors[network].getContent();
 
     //console.log('Sending data...');
-    for(var i=0;i<sockets.length;i++)
+    for(var i=0;i<sockets[network].length;i++)
     {
       try {
-        sockets[i].send(data);
+        sockets[network][i].send(data);
       }
       catch (e)
       {
@@ -352,11 +380,15 @@ connect();
     }
   };
 
-  //start application
+  // start application
   console.log('Hit CTRL-C to stop the server');
-  main = new Main(contentUpdated);
-  main.start();
-  contentUpdated();// trigger first update
+
+  // now start all networks
+  config.networks.forEach(function (network){
+    monitors[network] = new main.Monitor(function(){contentUpdated(network);}, network);
+    monitors[network].start();
+    contentUpdated(network);// trigger first update
+  });
 };
 
 
