@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.1.12",
+  "version": "0.1.15",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",

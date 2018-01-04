@@ -28,9 +28,43 @@
   var web3 = new Web3(); // eslint-disable-line  no-unused-vars
 
   var config = {
-    // list networks that should be monitored (e.g. mainnet, ropsten, ...)
-    'networks': ['ropsten'],
+    //pubsub_protocol: 'ws', /* websocket push */
+    //pubsub_protocol: 'http', /* http bosh */
+    //pubsub_host: 'ulf',
+    // TODO
+    pubsub_protocol: 'wss', /* websocket */
+    pubsub_host: 'ropsten.xmpp.digioptions.com',
 
+
+    /**************************/
+    /* MarketMonitor settings */
+    /**************************/
+
+    /* list networks that should be monitored (e.g. mainnet, ropsten, ...) */
+    networks: ['ropsten'],
+
+    /* list/try to start markets that are expired no more than 74 hours ago */
+    marketsListExpiredSeconds: 74 * 60 * 60,
+
+    /* unlist/remove markets that are expired more that 120 hours ago - this
+    setting should be higher that 'marketsList' to prevent the restart of markets
+    that are alreasy removed from memory */
+    marketsDeleteExpiredSeconds: 120 * 60 * 60,
+
+    /* keep at least 20 markets before deleting old markets */
+    marketsKeepMin: 20,
+
+
+    /*******************/
+    /* Market settings */
+    /*******************/
+
+    /* wait some blockchain blocks before starting to trade. Immediately after
+    a restart there might be some of our orders that are still valid, and we
+    want to wait for expiration before starting again*/
+    waitBlocks: 5,
+
+    /* Set account(s) for each network via the private key. */
     accounts: {
       'mainnet': [
         //web3.eth.accounts.privateToAccount(<your-private-key>)
@@ -46,25 +80,12 @@
       ]
     },
 
-    //pubsub_protocol: 'ws', /* websocket push */
-    //pubsub_protocol: 'http', /* http bosh */
-    //pubsub_host: 'ulf',
-    // TODO
-    pubsub_protocol: 'wss', /* websocket */
-    pubsub_host: 'ropsten.xmpp.digioptions.com',
 
-    /* list/try to start markets that are expired no more than 74 hours ago */
-    marketsListExpiredSeconds: 74 * 60 * 60,
+    /*******************/
+    /* Nodejs settings */
+    /*******************/
 
-    /* unlist/remove markets that are expired more that 120 hours ago - this
-    setting should be higher that 'marketsList' to prevent the restart of markets
-    that are alreasy removed from memory */
-    marketsDeleteExpiredSeconds: 120 * 60 * 60,
-
-    /* keep at least 20 markets before deleting old markets */
-    marketsKeepMin: 20,
-
-    // optional basic authentication for nodejs server
+    /* optional basic authentication for nodejs server */
     basicAuth:{
       enabled: false,
       jwtSecret: null, /* if enabled is true you have to supply a secret */

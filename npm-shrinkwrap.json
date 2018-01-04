@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.1.12",
+  "version": "0.1.15",
   "dependencies": {
     "@types/node": {
       "version": "6.0.78",
@@ -180,16 +180,6 @@
       "version": "1.0.0",
       "from": "delayed-stream@>=1.0.0 <1.1.0",
       "resolved": "https://registry.npmjs.org/delayed-stream/-/delayed-stream-1.0.0.tgz"
-    },
-    "digioptions-contracts.js": {
-      "version": "0.6.0",
-      "from": "git+https://github.com/berlincode/digioptions-contracts.js.git",
-      "resolved": "git+https://github.com/berlincode/digioptions-contracts.js.git#23e19d1f3417714ba234660cada3508df5bbdc05"
-    },
-    "digioptions-tools.js": {
-      "version": "0.0.5",
-      "from": "git+https://github.com/berlincode/digioptions-tools.js.git",
-      "resolved": "git+https://github.com/berlincode/digioptions-tools.js.git#b38c75600678fde2461f6212a0ab4413d919bfda"
     },
     "dom-serializer": {
       "version": "0.1.0",
@@ -611,7 +601,7 @@
     },
     "safe-buffer": {
       "version": "5.1.1",
-      "from": "safe-buffer@>=5.0.1 <6.0.0",
+      "from": "safe-buffer@>=5.1.1 <6.0.0",
       "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.1.tgz"
     },
     "sax": {

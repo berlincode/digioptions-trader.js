@@ -43,7 +43,8 @@
       {t: 'int', v: toBN(order.size)},
       {t: 'uint', v: toBN(order.orderID)},
       {t: 'uint', v: toBN(order.blockExpires)},
-      {t: 'address', v: order.contractAddr}
+      {t: 'address', v: order.marketsAddr},
+      {t: 'bytes32', v: order.marketFactHash}
     );
   };
 
@@ -54,6 +55,13 @@
       s: toHex(sig.s),
       v: 27 + sig.recoveryParam
     };
+  };
+
+  var signOrder = function(order, privateKey) {
+    var hash = orderToHash(order);
+    // sign order (add r, s, v)
+    Object.assign(order, sign(privateKey, hash));
+    return order;
   };
 
   var verify = function(hash, signature, address) {
@@ -78,6 +86,7 @@
     toHex: toHex,
     orderToHash: orderToHash,
     sign: sign,
+    signOrder: signOrder,
     verify: verify,
     verifyOrder: verifyOrder
   };

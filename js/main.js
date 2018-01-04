@@ -50,7 +50,11 @@
   }
 })(this, function(config, digioptionsTools, digioptionsContracts, utils, Web3, Market){
   var PubSub = digioptionsTools.PubSub;
-  var normalize_order = digioptionsTools.normalize_order;
+  //var normalize_order = digioptionsTools.normalize_order;
+
+  var getDigioptionsUrlMarket = digioptionsTools.data_networks_utils.getDigioptionsUrlMarket;
+  var getEtherscanUrlContract = digioptionsTools.data_networks_utils.getEtherscanUrlContract;
+  //var getEtherscanUrlTx = digioptionsTools.data_networks_utils.getEtherscanUrlTx;
 
   function Monitor(contentUpdated, network){
     this.network = network;
@@ -136,11 +140,11 @@
       content_all += '<div class="row">';
       content_all += '<div class="col-md-6">';
       content_all += '<ul class="nav nav-pills nav-stacked">';
-      sorted_market_keys.forEach(function (marketAddr, idx){
-        var market = that.markets[marketAddr];
+      sorted_market_keys.forEach(function (factHash, idx){
+        var market = that.markets[factHash];
         content_all += (
           '<li role="presentation" class="' + ((idx===0)? 'active': '') + '">' +
-          '<a href="#' + marketAddr + '" data-toggle="tab">' +
+          '<a href="#' + factHash + '" data-toggle="tab">' +
           market.market.getHeading() +
           '</a>' +
           '</li>'
@@ -151,26 +155,29 @@
 
       content_all += '<div class="col-md-6">';
       content_all += '<div class="tab-content clearfix">';
-      sorted_market_keys.forEach(function (marketAddr, idx){
-        var market = that.markets[marketAddr];
+      sorted_market_keys.forEach(function (factHash, idx){
+        var market = that.markets[factHash];
+        var url_market = getDigioptionsUrlMarket(network,  market.marketsAddr, factHash);
+        var url_contract = getEtherscanUrlContract(network, market.marketsAddr);
+
         content_all += (
-          '<div class="panel panel-default tab-pane' + ((idx===0)? ' active': '') + '" id="' + marketAddr + '">' +
+          '<div class="panel panel-default tab-pane' + ((idx===0)? ' active': '') + '" id="' + factHash + '">' +
           '<div class="panel-heading">' +
-          (data_network.etherscanAddressUrl?
-            ('<a href="' + data_network.etherscanAddressUrl.replace('{contractAddr}', marketAddr) + '">' + marketAddr.substr(0,12) + '...</a> | ')
+          (url_contract?
+            ('<a href="' + url_contract + '">' + factHash.substr(0,12) + '...</a> | ')
             :
             ''
           ) +
           market.optionChain.underlying + ' | ' +
-          (data_network.digioptionsMarketUrl?
-            ('<a href="' + digioptionsTools.getUrlBase() + data_network.digioptionsMarketUrl.replace('{contractContractsAddr}', market.contractContractsAddr).replace('{marketAddr}', marketAddr) + '">view market</a> | ')
+          (url_market?
+            ('<a href="' + url_market + '">view market</a> | ')
             :
             ''
           ) +
           '</div>' +
           '<div class="panel-body">' +
-          'Contents for ' + marketAddr + '<br/>' +
-          that.markets[marketAddr].market.getContent() +
+          'Contents for ' + factHash + '<br/>' +
+          that.markets[factHash].market.getContent() +
           '</div>' +
           '</div>'
         );
@@ -192,11 +199,11 @@
         var market_key = sorted_market_keys[idx];
         var market = this.markets[market_key]; // TODO marketinfo
         if (
-            (idx >= config.marketsKeepMin) &&
-            market.market.isTerminated() &&
-            (market.optionChain.expiration < now - config.marketsDeleteExpiredSeconds) &&
-            market.expired
-          ){
+          (idx >= config.marketsKeepMin) &&
+          market.market.isTerminated() &&
+          (market.optionChain.expiration < now - config.marketsDeleteExpiredSeconds) &&
+          market.expired
+        ){
           delete this.markets[market_key];
         }
       }
@@ -208,18 +215,14 @@
       }
     };
 
-    that.getOptionChain = function(network, contractContractsAddr, marketAddr){
-      var contract = new web3.eth.Contract(digioptionsContracts.digioptions_market_abi, marketAddr);
+    that.setupMarket = function(marketsAddr, factHash){
+      var contract = new web3.eth.Contract(digioptionsContracts.digioptions_markets_abi, marketsAddr);
 
-      // TODO quick hack for web3 1.0 (pre release) contract call without arguments
-      var x = contract.methods.getOptionChain();
-      x.arguments = []; // set excplicitly arguments
-      x.call(function(error, result) {
+      contract.methods.getMarketBaseData(factHash).call(function(error, result) {
         /*
-      contract.methods.getOptionChain().call(function(error, result) {
 
-      var contract = web[network].eth.contract(digioptionsContracts.digioptions_market_abi).at(marketAddr);
-      contract.getOptionChain.call(function(error, result) {
+      var contract = web[network].eth.contract(digioptionsContracts.digioptions_markets_abi).at(factHash);
+      contract.getMarketBaseData.call(function(error, result) {
       */
         if(!error){
           var optionChain = {
@@ -231,13 +234,10 @@
             ethAddr: result[5]
           };
 
-          // TODO quick hack for web3 1.0 (pre release) contract call without arguments
-          var y = contract.methods.expired();
-          y.arguments = []; // set excplicitly arguments
-          y.call(function(error2, expired) {
+          contract.methods.expired(factHash).call(function(error2, expired) {
             if(!error){
 
-              var key = marketAddr.toLowerCase();
+              var key = factHash.toLowerCase();
               if (! that.markets[key]){
                 //console.log('new market (real trigger)', key);
                 that.markets[key] = {
@@ -246,33 +246,30 @@
                     web[network],
                     network,
                     data_network.chainID,
-                    config.accounts[network],
+                    //config.accounts[network],
                     contract,
+                    factHash,
                     optionChain,
                     expired,
+                    that.blockNumber, // current blockNumber
                     that.orderBookPublish
                   ),
+                  contract: contract,
                   optionChain: optionChain, // e.g. for sorting via expiration
                   expired: expired,
-                  contractContractsAddr: contractContractsAddr,
+                  marketsAddr: marketsAddr,
                   orderCache: {}
                 };
                 that.updateUI(); // to show the new market immediately
-                
+
                 if (! that.markets[key].market.isTerminated()){
-    //            that.pubsub = that.setupPubsub();
-                }
-              }else{
-                if (expired && (! that.markets[key].expired)){
-                  // expire
-                  that.markets[key].market.expire();
-                  that.markets[key].expired = true;
+                  //that.pubsub = that.setupPubsub();
                 }
               }
             }
           });
         }else{
-          //console.error('error getOptionChain', marketAddr, error);
+          //console.error('error setupMarket', factHash, error);
         }
       });
     };
@@ -282,20 +279,21 @@
       var now = Math.floor(Date.now() / 1000);
       /* set the seconds so that even on sunday evening  we would see some (closed markets) */
 
-      data_network.contractContractsAddr.forEach(function (contractContractsAddr){
+      data_network.marketsAddresses.forEach(function (marketsAddr){
 
         // check for new markets
-        var contract = new web3.eth.Contract(digioptionsContracts.digioptions_contracts_abi, contractContractsAddr);
-        contract.methods.getContracts(false, now - config.marketsListExpiredSeconds).call(function(error, result) {
+        var contract = new web3.eth.Contract(digioptionsContracts.digioptions_markets_abi, marketsAddr);
+        // TODO 20 (create config variable)
+        contract.methods.getContracts(false, now - config.marketsListExpiredSeconds, 20).call(function(error, result) {
           if(!error){
             var i;
             result = result.filter(function(x){return x!='0x0000000000000000000000000000000000000000';});
             for (i=0 ; i < result.length ; i++){
-              var marketAddr = result[i];
-              var key = marketAddr.toLowerCase();
+              var factHash = result[i];
+              var key = factHash.toLowerCase();
               if (! that.markets[key]){
-                //console.log('new market (getOptionChain)', key);
-                that.getOptionChain(network, contractContractsAddr, marketAddr);
+                //console.log('new market (getMarketBaseData)', key);
+                that.setupMarket(marketsAddr, factHash);
               }
             }
           }else{
@@ -327,8 +325,9 @@
         var i;
         for (i=0 ; i < data.length ; i++){
           var order = data[i];
-          var key = digioptionsTools.normalize_order(order);
-          if (key) {
+          order = digioptionsTools.normalize_order(order);
+          if (order) {
+            var key = digioptionsTools.orderUniqueKey(order);
             var market = that.markets[order.contractAddr];
             if (! this.market){
               console.log('no such market', order.contractAddr);
@@ -356,17 +355,42 @@
         that.updateUI();
       };
       pubsub.feedback = function(msg, col, connection_ok){
-        that.pubsub_feedback_msg = msg;
-        that.pubsub_feedback_col = col;
-        that.pubsub_feedback_connection_ok = connection_ok;
-        that.updateUI();
-      };
+        this.pubsub_feedback_msg = msg;
+        this.pubsub_feedback_col = col;
+        this.pubsub_feedback_connection_ok = connection_ok;
+        this.updateUI();
+      }.bind(this);
       //pubsub.disconnect = function(){
       //  that.pubsub = undefined;
       //};
 
       pubsub.connect();
       return pubsub;
+    };
+
+    this.checkExpired = function() {
+      //console.log('checkExpired', network);
+      var sorted_market_keys = that.get_sorted_market_keys(that.markets);
+      sorted_market_keys.forEach(function (factHash){
+        var market = that.markets[factHash];
+        // TODO rename marketDetails
+        if (! market.expired) {
+          market.contract.methods.expired(factHash).call(function(error, expired) {
+            //console.log('xxxx', factHash, error, expired);
+            if(!error){
+              sorted_market_keys.forEach(function (factHash){
+                var key = factHash.toLowerCase();
+                var market = that.markets[key];
+                if (expired && (! market.expired)){
+                  // expire
+                  market.expired = true;
+                  market.market.expire();
+                }
+              });
+            }
+          });
+        }
+      });
     };
 
     this.updateBlockNumbers = function() {
@@ -379,6 +403,12 @@
           if (that.blockNumber !== blockNumber){
 
             that.blockNumber = blockNumber;
+            var sorted_market_keys = that.get_sorted_market_keys(that.markets);
+            sorted_market_keys.forEach(function (factHash){
+              var market = that.markets[factHash];
+              if (! market.market.isTerminated())
+                market.market.updateBlockNumber(blockNumber);
+            });
           }
           //console.log('blockNumber network', network, blockNumber);
           //that.pubsub = that.setupPubsub();
@@ -392,15 +422,16 @@
       this.searchMarkets();
       setInterval(
         function(){
-          that.deleteOldTerminatedMarkets();
-          that.searchMarkets();
-        },
+          this.deleteOldTerminatedMarkets();
+          this.searchMarkets();
+          this.checkExpired();
+        }.bind(this),
         5 * 60 * 1000 /* every 5 minutes */
       );
     };
 
     this.start = function() {
-      //this.pubsub = this.setupPubsub();
+      this.pubsub = this.setupPubsub();
       this.updateBlockNumbers();
 
 
@@ -410,7 +441,7 @@
           that.updateUI();
 
           that.updateBlockNumbers();
-        },
+        }.bind(this),
         10000
       );
     };
