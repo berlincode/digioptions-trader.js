@@ -31,6 +31,13 @@ module.exports = {
                 "terms": ["todo", "fixme"], 
                 "location": "anywhere"
             }
+        ],
+        "object-curly-spacing": [
+            "error",
+            "never"
         ]
-    }
+    },
+    "plugins": [
+        "html"
+    ]
 };

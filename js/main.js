@@ -23,7 +23,6 @@
           digioptionsTools,
           digioptionsContracts,
           utils,
-          //root.Web3 /* TODO: quick hack for web3 before 1.0 - we use global Web3, because require('web3') returns BigNumber - see https://github.com/ethereum/web3.js/issues/280 */
           Web3,
           Market
         ); } );
@@ -50,10 +49,10 @@
   }
 })(this, function(config, digioptionsTools, digioptionsContracts, utils, Web3, Market){
   var PubSub = digioptionsTools.PubSub;
-  //var normalize_order = digioptionsTools.normalize_order;
 
   var getDigioptionsUrlMarket = digioptionsTools.data_networks_utils.getDigioptionsUrlMarket;
   var getEtherscanUrlContract = digioptionsTools.data_networks_utils.getEtherscanUrlContract;
+  var getXmppPubsubViewerUrl = digioptionsTools.data_networks_utils.getXmppPubsubViewerUrl;
   //var getEtherscanUrlTx = digioptionsTools.data_networks_utils.getEtherscanUrlTx;
 
   function Monitor(contentUpdated, network){
@@ -70,13 +69,16 @@
     this.markets = {};
     this.blockNumber = undefined;
     this.pubsub = undefined;
-    var web = {}; // contains web3 for each network
 
     this.content = null;
 
+    var web3 = new Web3();
+    web3.setProvider(digioptionsTools.data_networks_utils.getProvider(Web3, network));
 
-    var web3 = new Web3(digioptionsTools.getProvider(Web3, data_network));
-
+    // add accounts
+    config.accounts[network].forEach(function (account){
+      web3.eth.accounts.wallet.add(account);
+    });
 
     this.get_sorted_market_keys = function(markets){
       var sortable = [];
@@ -159,21 +161,15 @@
         var market = that.markets[factHash];
         var url_market = getDigioptionsUrlMarket(network,  market.marketsAddr, factHash);
         var url_contract = getEtherscanUrlContract(network, market.marketsAddr);
+        var url_pubsub_viewer = getXmppPubsubViewerUrl(network, market.marketsAddr, factHash);
 
         content_all += (
           '<div class="panel panel-default tab-pane' + ((idx===0)? ' active': '') + '" id="' + factHash + '">' +
           '<div class="panel-heading">' +
-          (url_contract?
-            ('<a href="' + url_contract + '">' + factHash.substr(0,12) + '...</a> | ')
-            :
-            ''
-          ) +
-          market.optionChain.underlying + ' | ' +
-          (url_market?
-            ('<a href="' + url_market + '">view market</a> | ')
-            :
-            ''
-          ) +
+          (url_contract ? ('<a href="' + url_contract + '">' + factHash.substr(0,12) + '...</a> | ') : '') +
+          '"' + utils.escape(web3.utils.hexToUtf8(market.optionChain.underlying).split('\0').shift()) + '" | ' +
+          (url_market ? '<a href="' + url_market + '">view market</a> | ' : '') +
+          (url_pubsub_viewer ? '<a href="' + url_pubsub_viewer + '">pubsub viewer</a> | ' : '') +
           '</div>' +
           '<div class="panel-body">' +
           'Contents for ' + factHash + '<br/>' +
@@ -209,12 +205,6 @@
       }
     };
 
-    this.orderBookPublish = function(data_array){
-      if (that.pubsub){
-        that.pubsub.publish(data_array);
-      }
-    };
-
     that.setupMarket = function(marketsAddr, factHash){
       var contract = new web3.eth.Contract(digioptionsContracts.digioptions_markets_abi, marketsAddr);
 
@@ -226,12 +216,14 @@
       */
         if(!error){
           var optionChain = {
-            expiration: result[0],
+            base_unit_exp: 18, // TODO from contract
+            expiration: Number(result[0]),
             underlying: result[1],
-            margin: result[2],
-            realityID: result[3],
-            factHash: result[4],
-            ethAddr: result[5]
+            margin: web3.utils.toBN(result[2]),
+            ndigit: Number(result[3]),
+            ethAddr: result[4],
+            strikes: result[5].map(function(x){return web3.utils.toBN(x);})
+            //factHash: factHash
           };
 
           contract.methods.expired(factHash).call(function(error2, expired) {
@@ -243,7 +235,7 @@
                 that.markets[key] = {
                   market: new Market(
                     that.updateUI,
-                    web[network],
+                    web3,
                     network,
                     data_network.chainID,
                     //config.accounts[network],
@@ -252,18 +244,21 @@
                     optionChain,
                     expired,
                     that.blockNumber, // current blockNumber
-                    that.orderBookPublish
+                    function(data_array) { // ordersPublish
+                      if (that.pubsub){
+                        that.pubsub.publish(data_array, marketsAddr, factHash);
+                      }
+                    }
                   ),
                   contract: contract,
                   optionChain: optionChain, // e.g. for sorting via expiration
                   expired: expired,
-                  marketsAddr: marketsAddr,
-                  orderCache: {}
+                  marketsAddr: marketsAddr
                 };
                 that.updateUI(); // to show the new market immediately
 
                 if (! that.markets[key].market.isTerminated()){
-                  //that.pubsub = that.setupPubsub();
+                  that.pubsub.subscribe(marketsAddr, factHash); // TODO marketFactHash
                 }
               }
             }
@@ -284,10 +279,12 @@
         // check for new markets
         var contract = new web3.eth.Contract(digioptionsContracts.digioptions_markets_abi, marketsAddr);
         // TODO 20 (create config variable)
+        //console.log("getContracts", marketsAddr)
         contract.methods.getContracts(false, now - config.marketsListExpiredSeconds, 20).call(function(error, result) {
           if(!error){
             var i;
-            result = result.filter(function(x){return x!='0x0000000000000000000000000000000000000000';});
+            result = result.filter(function(x){return x!='0x0000000000000000000000000000000000000000000000000000000000000000';});
+            //console.log("getContracts",result)
             for (i=0 ; i < result.length ; i++){
               var factHash = result[i];
               var key = factHash.toLowerCase();
@@ -297,59 +294,49 @@
               }
             }
           }else{
-            //console.error('error getContracts', error);
+            console.error('error getContracts', error);
           }
         });
       });
     };
 
     this.setupPubsub = function(){
-      var pubsub = new PubSub(config.pubsub_protocol, config.pubsub_host);
-
-      //          pubsub.debug = true;
-
-      //    $('#publish').click(function(event) {
-      //        event.preventDefault();
-      //        var data_array = [];
-      //        try {
-      //            data_array.push(JSON.parse($('#message0').val()));
-      //        } catch (e) {}
-      //        try {
-      //            data_array.push(JSON.parse($('#message1').val()));
-      //        } catch (e) {}
-      //        if (data_array.length > 0)
-      //            pubsub.publish(data_array);
-      //    });
+      var pubsub = new PubSub(network);
+      //pubsub.debug = true;
 
       pubsub.on_data = function(data){
         var i;
         for (i=0 ; i < data.length ; i++){
           var order = data[i];
-          order = digioptionsTools.normalize_order(order);
+          order = digioptionsTools.orderNormalize(order);
           if (order) {
-            var key = digioptionsTools.orderUniqueKey(order);
-            var market = that.markets[order.contractAddr];
-            if (! this.market){
+            var key0 = order.marketFactHash.toLowerCase(); // TODO rename key
+            var market = that.markets[key0];
+            if (! market){
               console.log('no such market', order.contractAddr);
               continue;
             }
 
-            console.log(order);
+            market.market.receivedOrder(order);
+            //var key = digioptionsTools.orderUniqueKey(order);
 
-            if (key in market.orderCache){
-              console.log('already chached');
-              continue;
-            }
+            that.pubsub_message_count++; // TODO increment after orderCache check
+            //that.updateUI(); // to show the new market immediately
+//            if (key in market.orderCache){
+//              console.log('already chached');
+//              continue;
+//            }
+//            market.orderCache[key] = order;
             //TODO
             //(this.markets[sorted_market_keys[idx]].market.isTerminated())){
 
-            if (utils.verifyOrder(order)){
+//            if (utils.verifyOrder(order)){
               //market.orderCache[key] = order;
-              that.pubsub_message_count++;
+//              that.pubsub_message_count++;
               //console.log('ok', that.pubsub_message_count);
-            }else{
-              console.log('error in order verification:', order);
-            }
+//            }else{
+//              console.log('error in order verification:', order);
+//            }
           }
         }
         that.updateUI();
@@ -378,16 +365,16 @@
           market.contract.methods.expired(factHash).call(function(error, expired) {
             //console.log('xxxx', factHash, error, expired);
             if(!error){
-              sorted_market_keys.forEach(function (factHash){
-                var key = factHash.toLowerCase();
-                var market = that.markets[key];
+//              sorted_market_keys.forEach(function (factHash){
+//                var key = factHash.toLowerCase();
+//                var market = that.markets[key];
                 if (expired && (! market.expired)){
                   // expire
                   market.expired = true;
                   market.market.expire();
                 }
-              });
-            }
+//              });
+            }// TODO log possible error
           });
         }
       });
@@ -401,7 +388,7 @@
             that.startSearchMarkets();
 
           if (that.blockNumber !== blockNumber){
-
+            // blockNumer has changed
             that.blockNumber = blockNumber;
             var sorted_market_keys = that.get_sorted_market_keys(that.markets);
             sorted_market_keys.forEach(function (factHash){
@@ -433,7 +420,6 @@
     this.start = function() {
       this.pubsub = this.setupPubsub();
       this.updateBlockNumbers();
-
 
       setInterval(
         function(){

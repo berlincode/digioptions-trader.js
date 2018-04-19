@@ -4,29 +4,34 @@
     // AMD
     define(
       [
+        'factsigner',
         './config',
         './utils'
       ], function (
+        factsigner,
         config,
         utils) {
         return factory(
+          factsigner,
           config,
           utils
         ).Market; } );
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
+      require('factsigner'),
       require('./config.js'),
       require('./utils.js')
     ).Market;
   } else {
     // Global (browser)
     root.Market = factory(
+      root.factsigner,
       root.config,
       root.utils
     ).Market;
   }
-})(this, function(config, utils){
+})(this, function(factsigner, config, utils){
 
   /*
   Each market class should have following methods:
@@ -38,6 +43,7 @@
         expired==false and meanwhile the market expired. It might be used to
         terminate the market.
     * updateBlockNumber()
+    * receivedOrder()
 
   Terminated markets are unsubscribed from xmpp orderbook feed and may be
   removed from memory.
@@ -59,29 +65,44 @@
     orderBookPublish
   ){
 
-  //var toBN = function(val){return new web3.utils.BN(val);}; // for web3 1.0
-    var accounts = config.accounts[network];
+    this.content = null;
+    this.heading = null;
+    this.counter = 0;
+    this.pubsub_message_count = 0;
+    this.timer = undefined;
+    this.terminated = false; // terminated old Market may be removed from memory
+    this.blockNumber = undefined;
+    this.orderID = 0; //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
 
-    var gen_order = function(callbackBrowserOrder){
+    var account = web3.eth.accounts.wallet[0]; // default is to take the first account
+
+    this.gen_order = function(callbackBrowserOrder){
       var orders = [];
-      var blockNumber = 100000;
-      var cumulativeMatchSize = 0;
       var update = 5;
-      var account = accounts[0];
+      this.orderID ++;
       var order={
-        addr: account.address, // TODO
+        addr: account.address,
         optionID: 0,
         price: 1,
         size: 1,
-        orderID: 0, //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
-        blockExpires: blockNumber + update,
+        orderID: this.orderID, //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
+        blockExpires: this.blockNumber + update,
         marketsAddr: marketsContract.options.address,
-        marketFactHash: '0xdb2852b3edf8820ebad17f6cdb67a1c234cd519105a6b0e935c8fe336e6b310c'
+        marketFactHash: marketFactHash
       };
 
-      order = utils.signOrder(order, account.privateKey); // sign order (add r, s, v)
-      console.log('signed order', order);
-      console.log('verifyOrder', utils.verifyOrder(order));
+      utils.signOrder(web3, order, account.address, function(err, order_signed) {
+        if(!err){
+          // TODO catch err
+          //console.log('ordersig', order_signed);
+          //console.log('ordersig', JSON.stringify(order_signed));
+          //console.log('verifyOrder', utils.verifyOrder(order));
+          orderBookPublish([order_signed]);
+        } else {
+          console.log('error signOrder', err);
+        };
+      });
+      return;
       //var normalize_order = digioptionsTools.normalize_order;
 
       utils.call(web3, marketsContract, order.contractAddr, 'getFunds', [marketFactHash, order.addr, false], function(err, result) {
@@ -110,23 +131,19 @@
       });
     };
 
-    gen_order(function(orders){
-      console.log(orders);
-      //orderBookPublish(orders);
-    });
-
-    this.content = null;
-    this.heading = null;
-    this.counter = 0;
-    this.timer = undefined;
-    this.terminated = false; // terminated old Market may be removed from memory
-
     this.getContent = function(){
       if (this.content === null){
+        var expirationDate =new Date(optionChain.expiration * 1000);
+        var strikes_strings = optionChain.strikes.map(function(x){return factsigner.toUnitString(x, optionChain.base_unit_exp, optionChain.ndigit);});
         this.content = (
           'marketAddr: <span>' + marketsContract.options.address + '</span><br/>' +
           'counter: <span>' + this.counter + '</span><br/>' +
+          'pubsub_message_count: <span>' + this.pubsub_message_count + '</span><br/>' +
           'expiration: <span>' + optionChain.expiration + '</span><br/>' +
+          'expiration (local timezone): <span>' + expirationDate + '</span><br/>' +
+          'expiration (UTC): <span>' + expirationDate.toUTCString() + '</span><br/>' +
+          'margin: <span>' + factsigner.toUnitStringExact(optionChain.margin.mul(web3.utils.toBN(100)), optionChain.base_unit_exp) + ' %</span><br/>' +
+          'strikes: <span>' + strikes_strings.join(', ') + '</span><br/>' +
           'terminated: <span>' + this.terminated + '</span>'
         );
       }
@@ -138,7 +155,7 @@
         this.heading = (
           '' + marketsContract.options.address.substr(0, 12) + '... | ' +
           '<span class="hidden-xs">network: </span>' + network + ' | ' +
-          '<span class="hidden-xs">underlying: </span>' + optionChain.underlying + ' ' +
+          '<span class="hidden-xs">underlying: </span>"' + utils.escape(web3.utils.hexToAscii(optionChain.underlying).split('\0').shift()) + '" ' +
           (expired ?
             '<span key="market_open_close" class="label label-default">closed</span>'
             :
@@ -170,14 +187,20 @@
     };
 
     this.updateBlockNumber = function(blockNumber){
-
+      this.blockNumber = blockNumber;
       if (blockNumber < blockNumberInitial + config.waitBlocks){
         this.content = 'remaining blocks ... ' + (blockNumberInitial + config.waitBlocks - blockNumber);
         contentUpdated();
       }else{
-        console.log('starting ...');
-        this.start();
+        //console.log('starting ...');
+        //this.start();
+        this.update();
       }
+    };
+
+    this.receivedOrder = function(order){
+      this.pubsub_message_count ++;
+      this.updateUI();
     };
 
     this.terminate = function(){
@@ -191,21 +214,12 @@
 
     this.update = function(){
       this.counter ++;
+      this.gen_order(function(orders){
+        console.log(orders);
+        ordersPublish(orders);
+      });
+
       this.updateUI();
-    };
-
-    this.start = function(){
-      if (! this.timer) {
-        this.update();
-
-        this.timer = setInterval(
-          function(){
-            //console.log('timer');
-            this.update();
-          }.bind(this),
-          2000
-        );
-      }
     };
 
     // check if market should be started at all?
@@ -216,9 +230,7 @@
     }
 
     this.updateBlockNumber(blockNumberInitial);
-
   }
 
   return {'Market': Market};
 });
-

@@ -9,7 +9,6 @@
         Web3
       ) {
         return factory(
-          //root.Web3 /* TODO: quick hack for web3 before 1.0 - we use global Web3, because require("web3") returns BigNumber - see https://github.com/ethereum/web3.js/issues/280 */
           Web3
         ).config; } );
   } else if (typeof module !== 'undefined' && module.exports) {
@@ -40,7 +39,7 @@
     /* MarketMonitor settings */
     /**************************/
 
-    /* list networks that should be monitored (e.g. mainnet, ropsten, ...) */
+    /* list networks that should be monitored (e.g. 'main', 'ropsten', ...) */
     networks: ['ropsten'],
 
     /* list/try to start markets that are expired no more than 74 hours ago */
@@ -63,20 +62,21 @@
     a restart there might be some of our orders that are still valid, and we
     want to wait for expiration before starting again*/
     waitBlocks: 5,
+    //waitBlocks: 0,
 
     /* Set account(s) for each network via the private key. */
     accounts: {
-      'mainnet': [
-        //web3.eth.accounts.privateToAccount(<your-private-key>)
+      'main': [
+        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
       ],
       'ropsten': [
-        //web3.eth.accounts.privateToAccount(<your-private-key>)
+        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
       ],
       'kovan': [
-        //web3.eth.accounts.privateToAccount(<your-private-key>)
+        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
       ],
       'rinkeby': [
-        //web3.eth.accounts.privateToAccount(<your-private-key>)
+        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
       ]
     },
 

@@ -9,8 +9,6 @@ Click here to view a live version that runs in your browser:
 [https://berlincode.github.io/digioptions-trader.js/trading-browser.html](https://berlincode.github.io/digioptions-trader.js/trading-browser.html).
 
 
-![logo digioptions.com](img/digioptions.png)
-
 Public repository
 -----------------
 

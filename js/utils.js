@@ -2,79 +2,102 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD
-    define([
-      'web3',
-      'js/buffer'
-    ], function (
+    define(
+      [
+        'web3',
+        'factsigner',
+        'digioptions-contracts.js'
+      ], function (
         Web3,
-        Buffer
+        factsigner,
+        digioptionsContracts
       ) {
-      return factory(
-        //root.Web3 /* TODO: quick hack for web3 before 1.0 - we use global Web3, because require('web3') returns BigNumber - see https://github.com/ethereum/web3.js/issues/280 */
-        Web3,
-        Buffer.Buffer,
-        XMLHttpRequest
-      ); } );
+        return factory(
+          Web3,
+          factsigner,
+          digioptionsContracts,
+          XMLHttpRequest
+        ); } );
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
       require('web3'),
-      Buffer,
+      require('factsigner'),
+      require('digioptions-contracts.js'),
       require('xhr2')
     );
   } else {
     // Global (browser)
     root.utils = factory(
       root.Web3,
-      root.buffer.Buffer,
+      root.factsigner,
+      root.digioptionsContracts,
       XMLHttpRequest
     );
   }
-})(this, function(Web3, Buffer/*, XMLHttpRequest */){
+})(this, function(Web3, factsigner, digioptionsContracts /*, XMLHttpRequest */){
 
   var web3 = new Web3();
-  var toBN = function(val){return new web3.utils.toBN(val);};
-  var toHex = function(val){return web3.utils.toHex(val);};
+  var orderToHash = digioptionsContracts.orderToHash;
 
-  var orderToHash = function(order){
-    return web3.utils.soliditySha3(
-      {t: 'uint', v: toBN(order.optionID)},
-      {t: 'uint', v: toBN(order.price)},
-      {t: 'int', v: toBN(order.size)},
-      {t: 'uint', v: toBN(order.orderID)},
-      {t: 'uint', v: toBN(order.blockExpires)},
-      {t: 'address', v: order.marketsAddr},
-      {t: 'bytes32', v: order.marketFactHash}
-    );
+  // html escape function from underscore.js
+  var escapeMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '\'': '&#x27;',
+    '`': '&#x60;'
   };
 
-  var sign = function(privateKey, hash){
-    var sig = web3.eth.accounts.secp256k1.keyFromPrivate(privateKey.replace(/^0x/i,''), 16).sign(hash.replace(/^0x/i,''), 16);
-    return {
-      r: toHex(sig.r),
-      s: toHex(sig.s),
-      v: 27 + sig.recoveryParam
+  // Functions for escaping and unescaping strings to/from HTML interpolation.
+  var createEscaper = function createEscaper(map) {
+    var escaper = function escaper(match) {
+      return map[match];
+    };
+    // Regexes for identifying a key that needs to be escaped
+    var source = '(?:' + Object.keys(map).join('|') + ')';
+    //var source = '(?:&|<|>|"|\'|`)';
+    var testRegexp = RegExp(source);
+    var replaceRegexp = RegExp(source, 'g');
+    return function (string) {
+      string = string == null ? '' : '' + string;
+      return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
     };
   };
 
-  var signOrder = function(order, privateKey) {
-    var hash = orderToHash(order);
+  var signOrder = function(web3, order, address, callback) {
+    var hash = digioptionsContracts.orderToHash(web3.utils, order);
     // sign order (add r, s, v)
-    Object.assign(order, sign(privateKey, hash));
-    return order;
+    factsigner.sign(web3, address, hash, function(err, sig) {
+      if (err)
+        callback(err);
+      else
+        callback(undefined, Object.assign({}, order, sig));
+    });
   };
 
   var verify = function(hash, signature, address) {
-    var hash_buffer = new Buffer(hash.replace(/^0x/i,''), 'hex');
+    //console.log('verify', hash, signature, address);
+    //var hash_buffer = new Buffer(hash.replace(/^0x/i,''), 'hex');
+    var obj = {
+      r: signature.r,
+      s: signature.s,
+      v: signature.v
+    };
+    //console.log('obj', obj);
 
-    var publicKey = web3.eth.accounts.secp256k1.recoverPubKey(hash_buffer, { r: toBN(signature.r), s: toBN(signature.s) }, signature.v - 27);
-    var pubKey = (new Buffer(publicKey.encode('hex', false), 'hex')).slice(1);
-    var p = toHex(new web3.utils.BN(pubKey));
+    var publicKey = web3.eth.accounts.recover(obj);
+    console.log('publicKey',publicKey);
+    //var publicKey = web3.eth.accounts.secp256k1.recoverPubKey(hash_buffer, { r: toBN(signature.r), s: toBN(signature.s) }, signature.v - 27);
+    //var pubKey = (new Buffer(publicKey.encode('hex', false), 'hex')).slice(1);
+    //var p = toHex(new web3.utils.BN(pubKey));
     return web3.eth.accounts.publicToAddress(p).toLowerCase() === address.toLowerCase();
   };
 
   var verifyOrder = function(order) {
-    var hash = orderToHash(order);
+    var hash = orderToHash(web3.utils, order);
+    console.log('verifyOrder hash:', hash);
     return verify(
       hash,
       order, /* contains r, s, v */
@@ -82,10 +105,7 @@
   };
 
   return {
-    toBN: toBN,
-    toHex: toHex,
-    orderToHash: orderToHash,
-    sign: sign,
+    escape: createEscaper(escapeMap),
     signOrder: signOrder,
     verify: verify,
     verifyOrder: verifyOrder

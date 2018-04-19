@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head> 
-    <title>digioptions-trader.js</title> 
-    <meta charset=utf-8 />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<head>
+    <title>digioptions-trader.js</title>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
@@ -14,15 +13,16 @@
     <script type="text/javascript" src="node_modules/react-dom/dist/react-dom.min.js"></script>
     <script type="text/javascript" src="node_modules/react-html-parser/dist/react-html-parser.min.js"></script>
 
-    <script type="text/javascript" src="js/buffer.js"></script>
     <script type="text/javascript" src="js/web3.js"></script>
-    <script type="text/javascript" src="node_modules/strophe.js/strophe.js"></script> 
+    <script type="text/javascript" src="node_modules/factsigner/index.js"></script>
+    <script type="text/javascript" src="node_modules/strophe.js/strophe.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/strophe.pubsub.js"></script>
-    <script type="text/javascript" src="node_modules/digioptions-tools.js/pubsub.js"></script>
-    <script type="text/javascript" src="node_modules/digioptions-tools.js/normalize_order.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/data_networks.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/data_networks_utils.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/data_config.js"></script>
+    <script type="text/javascript" src="node_modules/digioptions-tools.js/pubsub.js"></script>
+    <script type="text/javascript" src="node_modules/digioptions-tools.js/order_normalize.js"></script>
+    <script type="text/javascript" src="node_modules/digioptions-tools.js/order_unique_key.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/index.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_markets_abi.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_markets_bin.js"></script>
@@ -35,8 +35,8 @@
 
 <!--    <script type="text/javascript" src="node_modules/requirejs/require.js"></script>-->
 
-</head> 
-<body> 
+</head>
+<body>
     <nav class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">
             <div class="navbar-header">
@@ -52,79 +52,78 @@
 
 <script type="text/javascript">
 //<![CDATA[
-    var args = (function(){
-    // parse browser's query string append parameters
-    var args = {};
-    var query = window.location.search.replace(/^\?/, '');
-    var vars = query.split('&');
-    for (var i = 0; i < vars.length; i++) {
-        var pair = vars[i].split('=');
-        args[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
-    }
-    return args;
-    })();
+var args = (function(){
+  // parse browser's query string append parameters
+  var args = {};
+  var query = window.location.search.replace(/^\?/, '');
+  var vars = query.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    args[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+  }
+  return args;
+})();
 
-    var main_wrapper = function(main){
-        // we may need to wait until 'load' event before we can
-        // check if metamask/mist has injected 'web3'
+var main_wrapper = function(main){
+  // we may need to wait until 'load' event before we can
+  // check if metamask/mist has injected 'web3'
 
-        var monitor;
+  var monitor;
 
-        var contentUpdated = function(){
-            if (! monitor)
-                return;
-            var html = monitor.getContent();
-            var elm_content = document.getElementById("content");
-            var root = React.createElement('div', {}, ReactHtmlParser.default(html));
-            ReactDOM.render(root, elm_content);
-        };
-    
-        window.addEventListener('load', function() {
-            var network = main.networkConfigured(args.network);
-            if (network){
-                monitor = new main.Monitor(contentUpdated, network);
-                monitor.start();
-            } else {
-                document.getElementById("content").innerHTML = (
-                    main.navTabs() +
-                    'invalid network'
-                );
-            }
-        });
-    };
+  var contentUpdated = function(){
+    if (! monitor)
+      return;
+    var html = monitor.getContent();
+    var elm_content = document.getElementById('content');
+    var root = window.React.createElement('div', {}, window.ReactHtmlParser.default(html, {decodeEntities: true}));
+    window.ReactDOM.render(root, elm_content);
+  };
 
-    if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined')){
-        // modify jsExtRegExp (orig: /^\/|:|\?|\.js$/) so that we may use 'paths' even for modules
-        // ending with '.js' like strophe.js
-        require.jsExtRegExp = /^\/|:|\?/;
-        // use 'paths' so that we can use modules directly from node_modules directory
-        require.config({
-            paths: {
-                "strophe.js": "node_modules/strophe.js/strophe",
-                "digioptions-tools.js": "node_modules/digioptions-tools.js/index",
-                "digioptions-contracts.js": "node_modules/digioptions-contracts.js/index",
-                "web3": "js/web3",
-                // TODO following should be imported relatively
-                "pubsub": "node_modules/digioptions-tools.js/pubsub",
-                "normalize_order": "node_modules/digioptions-tools.js/normalize_order",
-                "data_networks": "node_modules/digioptions-tools.js/data_networks",
-                "data_networks_utils": "node_modules/digioptions-tools.js/data_networks_utils",
-                "data_config": "node_modules/digioptions-tools.js/data_config",
-                "strophe.pubsub": "node_modules/digioptions-tools.js/strophe.pubsub",
-
-                "digioptions_markets_abi": "node_modules/digioptions-contracts.js/digioptions_markets_abi",
-                "digioptions_markets_bin": "node_modules/digioptions-contracts.js/digioptions_markets_bin",
-
-            }
-        });
-
-        require(['js/main'], function(main) {
-            main_wrapper(main);
-        });
+  window.addEventListener('load', function() {
+    var network = main.networkConfigured(args.network);
+    if (network){
+      monitor = new main.Monitor(contentUpdated, network);
+      monitor.start();
     } else {
-        main_wrapper(main);
-    };
+      document.getElementById('content').innerHTML = (
+        main.navTabs() +
+        'invalid network'
+      );
+    }
+  });
+};
+
+if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined')){
+  // modify jsExtRegExp (orig: /^\/|:|\?|\.js$/) so that we may use 'paths' even for modules
+  // ending with '.js' like strophe.js
+  require.jsExtRegExp = /^\/|:|\?/;
+  // use 'paths' so that we can use modules directly from node_modules directory
+  require.config({
+    paths: {
+      'strophe.js': 'node_modules/strophe.js/strophe',
+      'digioptions-tools.js': 'node_modules/digioptions-tools.js/index',
+      'digioptions-contracts.js': 'node_modules/digioptions-contracts.js/index',
+      'web3': 'js/web3',
+      // TODO following should be imported relatively
+      'pubsub': 'node_modules/digioptions-tools.js/pubsub',
+      'normalize_order': 'node_modules/digioptions-tools.js/normalize_order',
+      'data_networks': 'node_modules/digioptions-tools.js/data_networks',
+      'data_networks_utils': 'node_modules/digioptions-tools.js/data_networks_utils',
+      'data_config': 'node_modules/digioptions-tools.js/data_config',
+      'strophe.pubsub': 'node_modules/digioptions-tools.js/strophe.pubsub',
+
+      'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/digioptions_markets_abi',
+      'digioptions_markets_bin': 'node_modules/digioptions-contracts.js/digioptions_markets_bin'
+    }
+  });
+
+  require(['js/main'], function(main) {
+    main_wrapper(main);
+  });
+} else {
+  main_wrapper(window.main);
+}
 //]]>
 </script>
-</body> 
-</html> 
+</body>
+</html>

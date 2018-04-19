@@ -24,7 +24,7 @@ var trading = function() {
     //monitors[network] = .. // TODO
     sockets[network] = [];
   });
-  var ws = require('websocket.io'),
+  var WebSocketServer = require('websocket').server,
     http = require('http'),
     auth = require('basic-auth'),
     fs = require('fs'),
@@ -40,7 +40,7 @@ var trading = function() {
   window = {}; // eslint-disable-line no-global-assign
 
   // create a XMLHttpRequest object which can parse xml via jsom and sets responseXML
-  var XMLHttpRequestOrig = require('xmlhttprequest/lib/XMLHttpRequest.js').XMLHttpRequest;
+  var XMLHttpRequestOrig = require('xhr2').XMLHttpRequest;
   var XMLHttpRequest = function () {
     /* create object with original constructor */
     var xhr = new XMLHttpRequestOrig();
@@ -133,9 +133,9 @@ var trading = function() {
     if ((pathname === '/') || (pathname === '/index.html')) {
       var token = '';
       if (config.basicAuth.enabled){
-        token = jwt.sign({name: credentials.name}, config.basicAuth.jwtSecret, { expiresIn: config.basicAuth.jwtExpiresIn });
+        token = jwt.sign({name: credentials.name}, config.basicAuth.jwtSecret, {expiresIn: config.basicAuth.jwtExpiresIn});
       }
-      response.writeHead(200, { 'Content-Type': 'text/html' });
+      response.writeHead(200, {'Content-Type': 'text/html'});
       var html = `<!DOCTYPE html>
 <html dir="ltr" lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -152,13 +152,12 @@ var trading = function() {
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
-            <a class="navbar-brand" href="https://www.digioptions.com">
-                <img alt="digioptions.com" style="height: 25px" src="img/digioptions.png" />
+            <a class="navbar-brand" href="https://github.com/berlincode/digioptions-trader.js">
+                digioptions-trader.js ${package.version}
             </a>
-<p class="navbar-text">
-vers: ${package.version} ;
-status: <span id="ws-connection-status">not connected</span>
-</p>
+            <p class="navbar-text">
+                status: <span id="ws-connection-status">not connected</span>
+            </p>
         </div>
     </div>
 </nav>
@@ -276,7 +275,7 @@ connect();
           }
         }
         else {
-          response.writeHead(200, { 'Content-Type': contentType });
+          response.writeHead(200, {'Content-Type': contentType});
           response.end(filecontent, 'utf-8');
         }
       });
@@ -284,7 +283,16 @@ connect();
     }
   }).listen(port, host);
 
-  var server_ws = ws.attach(server);
+  var server_ws = new WebSocketServer({
+    httpServer: server,
+    // You should not use autoAcceptConnections for production
+    // applications, as it defeats all standard cross-origin protection
+    // facilities built into the protocol and the browser.  You should
+    // *always* verify the connection's origin and decide whether or not
+    // to accept it.
+    autoAcceptConnections: false
+  });
+    
 
   var socket_enable = function(socket, network){
     sockets[network].push(socket);
@@ -294,28 +302,32 @@ connect();
     }
   };
 
-  server_ws.on('connection', function(socket) {
+  server_ws.on('request', function(request) {
 
-    socket.on('message', function(message){
+    var connection = request.accept(null, request.origin);
+
+    connection.on('message', function(message){
 
       try {
-        var data = JSON.parse(message);
-        if (data.type === 'authenticate') {
-          var network = data.network || config.networks[0];
+        if (message.type === 'utf8') {
+          var data = JSON.parse(message.utf8Data);
+          if (data.type === 'authenticate') {
+            var network = data.network || config.networks[0];
 
-          if (! main.networkConfigured(network)){
-            socket.send(main.navTabs() + 'invalid network');
-          } else if (config.basicAuth.enabled){
-            jwt.verify(data.payload.token, config.basicAuth.jwtSecret, function (err, decoded) {
+            if (! main.networkConfigured(network)){
+              connection.send(main.navTabs() + 'invalid network');
+            } else if (config.basicAuth.enabled){
+              jwt.verify(data.payload.token, config.basicAuth.jwtSecret, function (err, decoded) {
 
-              if ((! err) && (decoded.name) && config.basicAuth.users[decoded.name]){
-                socket_enable(socket, network);
-                //console.log('auth success');
-              }
-            });
-          } else {
-            // no authentication necessary
-            socket_enable(socket, network);
+                if ((! err) && (decoded.name) && config.basicAuth.users[decoded.name]){
+                  socket_enable(connection, network);
+                  //console.log('auth success');
+                }
+              });
+            } else {
+              // no authentication necessary
+              socket_enable(connection, network);
+            }
           }
         }
       } catch(err) {
@@ -323,16 +335,14 @@ connect();
       }
     });
 
-    socket.on('close', function () {
+    connection.on('close', function () {
       try {
-        socket.close();
-        socket.destroy();
         //console.log('Socket closed!');
         config.networks.forEach(function (network){
           for (var i = 0; i < sockets[network].length; i++) {
-            if (sockets[network][i] == socket) {
+            if (sockets[network][i] == connection) {
               sockets[network].splice(i, 1);
-              //console.log('Removing socket from collection. Collection length: ' + sockets.length);
+              //console.log('Removing socket from collection. Collection length: ' + Object.keys(sockets).length);
               break;
             }
           }
