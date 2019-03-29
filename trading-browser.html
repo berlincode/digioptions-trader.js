@@ -6,8 +6,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
 
     <script type="text/javascript" src="js/babel-polyfill.js"></script>
@@ -31,10 +29,11 @@
     <script type="text/javascript" src="node_modules/digioptions-tools.js/js/order_normalize.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/js/index.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_markets_abi.js"></script>
-    <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_markets_bin.js"></script>
+    <script type="text/javascript" src="node_modules/digioptions-contracts.js/digioptions_market_lister_abi.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/index.js"></script>
 
     <script type="text/javascript" src="js/components/utils.js"></script>
+    <script type="text/javascript" src="js/components/sidebar.js"></script>
     <script type="text/javascript" src="js/components/trader_view.js"></script>
     <script type="text/javascript" src="js/components/market_view.js"></script>
     <script type="text/javascript" src="js/components/main_view.js"></script>
@@ -47,16 +46,6 @@
 -->
 </head>
 <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top" style="background-color: #0084cc; border-color: #0084cc; border-radius: 0;">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <a href="https://github.com/berlincode/digioptions-trader.js" class="navbar-left">
-                    <img alt="digioptions-trader.js" height="50" src="img/digioptions_trader.png">
-                </a>
-            </div>
-        </div>
-    </nav>
-    <a class="hidden-xs" href="https://github.com/berlincode/digioptions-trader.js"><img style="z-index: 9999; position: absolute; top: 0; right: 0; border: 0;" src="img/github_ribbon.png" alt="Fork me on GitHub" /></a>
     <div id="content" style="padding-top: 60px; word-wrap: break-word">loading ...</div>
 
     <script type="text/javascript">
@@ -88,9 +77,8 @@ var main_wrapper = function(main, mainView, React, ReactDOM){
     if (! monitor)
       return;
     var props = monitor.stateToProps();
-    var MonitorView = mainView.MonitorView;
     var elm_content = document.getElementById('content');
-    ReactDOM.render(React.createElement(MonitorView, props, null), elm_content);
+    ReactDOM.render(React.createElement(mainView.MonitorView, props, null), elm_content);
   };
 
   //window.addEventListener('load', function() {
@@ -105,7 +93,7 @@ if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined'))
   // use 'paths' so that we can use modules directly from node_modules directory
   require.config({
     paths: {
-      'web3': 'js/web3',
+      'web3': 'js/web3.min',
 
       // following is imported from node_modules folder
       'react': 'node_modules/react/umd/react.production.min',
@@ -124,7 +112,7 @@ if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined'))
       'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
 
       'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/digioptions_markets_abi',
-      'digioptions_markets_bin': 'node_modules/digioptions-contracts.js/digioptions_markets_bin'
+      'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/digioptions_market_lister_abi'
     }
   });
 

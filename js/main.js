@@ -32,7 +32,7 @@
       root.factsigner,
       root.digioptionsTools,
       root.digioptionsContracts,
-      root.Web3,
+      root.web3,
       root.market,
       root.db
     );
@@ -55,7 +55,7 @@
     this.pubsubFeedbackMsg = '???';
     this.pubsub_feedback_col = '#000000';
     this.pubsub_feedback_connection_ok = false;
-    this.start_time = new Date();
+    this.startTime = new Date();
     this.markets = {};
     this.blockHeader = undefined;
     this.pubsub = undefined;
@@ -96,14 +96,15 @@
       pubsubMessageCount: this.pubsubMessageCount,
       accounts: config.accounts[this.network],
       contractAddresses: this.dataNetwork.contractDescriptions.map(function(x){return x.addr;}),
-      uptime: Math.floor((new Date() - this.start_time) / 1000),
+      uptime: Math.floor((new Date() - this.startTime) / 1000),
       blockHeader: this.blockHeader && {
         // send only selected properties of blockHeader
         timestamp: this.blockHeader.timestamp,
         number: this.blockHeader.number
       },
       marketProps: marketProps,
-      dbIsRunning: db.isRunning()
+      dbIsRunning: db.isRunning(),
+      dbSize: db.size()
     };
   };
 
@@ -152,12 +153,12 @@
           expiration: Number(result.marketBaseData.expirationDatetime),
           underlying: result.marketBaseData.underlying,
           underlyingString: factsigner.hexToString(result.marketBaseData.underlying),
-          transactionFeeStringPercent: factsigner.toUnitStringExact(Web3.utils.toBN(result.marketBaseData.transactionFee).mul(Web3.utils.toBN('100')), Number(result.marketBaseData.baseUnitExp)),
+          transactionFeeStringPercent: factsigner.toUnitStringExact(that.web3.utils.toBN(result.marketBaseData.transactionFee).mul(that.web3.utils.toBN('100')), Number(result.marketBaseData.baseUnitExp)),
           ndigit: Number(result.marketBaseData.ndigit),
           signerAddr: result.marketBaseData.signerAddr,
           // TODO parseFloat
-          strikesFloat: result.marketBaseData.strikes.map(function(x){return parseFloat(factsigner.toUnitString(Web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit)));}),
-          strikesStrings: result.marketBaseData.strikes.map(function(x){return factsigner.toUnitString(Web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit));})
+          strikesFloat: result.marketBaseData.strikes.map(function(x){return parseFloat(factsigner.toUnitString(that.web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit)));}),
+          strikesStrings: result.marketBaseData.strikes.map(function(x){return factsigner.toUnitString(that.web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit));})
         };
 
         var marketDefinition = { // constant market definition
@@ -202,13 +203,13 @@
 
       // check for new markets
       var contract = new that.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi, contractAddr);
+      //console.log('getMarketDataList', contractAddr);
+      /* set the seconds so that even on sunday evening we would see some (closed markets) */
       // TODO 20 (create config variable)
-      //console.log("getMarketDataList", contractAddr)
-      /* set the seconds so that even on sunday evening  we would see some (closed markets) */
       contract.methods.getMarketDataList(false, false, now - config.marketsListExpiredSeconds, 20, []).call()
         .then(function(marketDataList) {
           marketDataList = marketDataList.filter(function(marketData){return marketData.marketBaseData.expirationDatetime > 0;});
-          //console.log("MarketList",result)
+          //console.log('MarketList', marketDataList);
           for (var i=0 ; i < marketDataList.length ; i++){
             var marketFactHash = marketDataList[i].marketFactHash;
             var key = marketFactHash.toLowerCase();
@@ -331,20 +332,21 @@
 
   Monitor.prototype.start = function() {
     var that = this;
+    var provider = digioptionsTools.dataNetworksUtils.getProvider(that.network);
     var conn = function(callbackConnect, callbackDisconnect){
       //var reconnectTimer = null;
       var reconnectInterval = 3000;
-      var web3 = new Web3(); // one web3 object where just the provider ist updated on reconnect
+      // TODO dummy / rewrite
+      var web3 = new Web3('http://localhost:8545'); // one web3 object where just the provider ist updated on reconnect
       var connect = function(){
         console.log('connect web3 provider');
-        var provider = digioptionsTools.dataNetworksUtils.getProvider(Web3, that.network);
         web3.setProvider(provider);
-        provider.on('error', function(e){console.log('WS Error', e);});
-        provider.on('connect', function () {
+        web3.currentProvider.on('error', function(e){console.log('WS Error', e);});
+        web3.currentProvider.on('connect', function () {
           console.log('web3 provider (re-)connected');
           callbackConnect(web3);
         });
-        provider.on('end', function(/* e */){
+        web3.currentProvider.on('end', function(/* e */){
           callbackDisconnect();
           console.log('WS closed');
           console.log('Attempting to reconnect in some seconds...');
@@ -354,7 +356,7 @@
 
           }, reconnectInterval);
 
-          web3.setProvider(provider);
+          //web3.setProvider(provider);
         });
       };
       connect();
@@ -371,6 +373,7 @@
       this.pubsub = this.setupPubsub();
 
       that.web3.eth.getBlock('latest', function (e, blockHeader){
+        // TODO handle error
         that.updateBlockNumbers(blockHeader);
       });
 

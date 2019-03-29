@@ -34,9 +34,9 @@
   var getEtherscanUrlContract = digioptionsTools.dataNetworksUtils.getEtherscanUrlContract;
   var getXmppPubsubViewerUrl = digioptionsTools.dataNetworksUtils.getXmppPubsubViewerUrl;
 
-  MarketViewHead.prototype = Object.create(React.Component.prototype);
+  MarketViewHead.prototype = Object.create(React.PureComponent.prototype);
   function MarketViewHead() {
-    React.Component.constructor.call(this);
+    React.PureComponent.constructor.call(this);
     var self = this;
 
     //self.state = {seconds: 0};
@@ -70,7 +70,7 @@
   }
 
   function MarketViewBody() {
-    React.Component.constructor.call(this);
+    React.PureComponent.constructor.call(this);
     var self = this;
 
     //self.state = {seconds: 0};
@@ -133,10 +133,10 @@
       );
     };
   }
-  MarketViewBody.prototype = Object.create(React.Component.prototype);
+  MarketViewBody.prototype = Object.create(React.PureComponent.prototype);
 
   function MarketViewMain() {
-    React.Component.constructor.call(this);
+    React.PureComponent.constructor.call(this);
     var self = this;
 
     self.render = function(){
@@ -171,7 +171,7 @@
       );
     };
   }
-  MarketViewMain.prototype = Object.create(React.Component.prototype);
+  MarketViewMain.prototype = Object.create(React.PureComponent.prototype);
 
   return {
     MarketViewHead: MarketViewHead,

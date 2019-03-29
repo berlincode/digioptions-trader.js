@@ -83,7 +83,7 @@
     this.trader = null;
     this.traderInfo = null;
 
-    this.account = web3.eth.accounts.wallet[0]; // default is to take the first account
+    this.account = web3.eth.accounts.wallet.accounts[0]; // default is to take the first account
     var that = this;
 
     // check if market should be started at all?
@@ -93,7 +93,7 @@
       return;
     }
 
-    var providerData = this.quoteProvider.getProviderDataFromSymbol(this.marketDefinition.marketBaseData.underlyingString);
+    var providerData = digioptionsTools.quoteProvider.getProviderDataFromSymbol(this.marketDefinition.marketBaseData.underlyingString);
     if (!providerData){
       this.traderInfo = 'not started: no quotes available for ' + this.marketDefinition.marketBaseData.underlyingString;
       this.terminated = true;
@@ -144,31 +144,20 @@
       return;
     }
 
-    var ordersSigned = [];
-    (function loop(i) {
-      // TODO make a promise chain here !
-      //console.log('loop', i);
-      if (i < orders.length) {
-        var order = Object.assign(
-          { // use default values if not excplicitly set
-            offerOwner: that.account.address,
-            marketsAddr: that.marketDefinition.contractAddr,
-            marketFactHash: that.marketDefinition.marketFactHash
-          },
-          orders[i]
-        );
-        digioptionsContracts.signOrder(that.web3, order, that.account.address)
-          .then(function(orderSigned){
-            //console.log('then', i);
-            ordersSigned.push(orderSigned);
-            loop(i+1); // go on with next index
-          }).catch(function (error) {
-            console.log(error);
-          });
-      } else {
-        that.orderBookPublish(ordersSigned);
-      }
-    })(0); // start at index 0
+    var ordersSigned = []; // TODO rename offersSigned
+    for (var i=0 ; i < orders.length ; i ++){
+      var order = Object.assign(
+        { // use default values if not excplicitly set
+          offerOwner: that.account.address,
+          marketsAddr: that.marketDefinition.contractAddr,
+          marketFactHash: that.marketDefinition.marketFactHash
+        },
+        orders[i]
+      );
+      var orderSigned = digioptionsContracts.signOrder(this.web3, this.account.privateKey, order);
+      ordersSigned.push(orderSigned);
+    } 
+    this.orderBookPublish(ordersSigned);
 
     return;
     //var normalize_order = digioptionsTools.normalize_order;

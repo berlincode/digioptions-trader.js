@@ -16,12 +16,13 @@
   } else {
     // Global (browser)
     root.config = factory(
-      root.Web3
+      root.web3
     );
   }
 })(this, function(Web3){
 
-  var web3 = new Web3(); // eslint-disable-line  no-unused-vars
+  // TODO dummy
+  var web3 = new Web3('http://localhost:8545'); // eslint-disable-line  no-unused-vars
 
   var config = {
 

@@ -18,7 +18,7 @@
     'main': {
       description: 'Main network',
       testnet: false,
-      digioptionsBaseUrl: 'https://www.digioptions.com/',
+      digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
       etherscanAddressUrl: 'https://etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://etherscan.io/address/{tx}',
       contractDescriptions: [],
@@ -30,14 +30,13 @@
       xmppJidPassword: ['anon@mainnet.xmpp.digioptions.com', 'password'],
       xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=main&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
       ethProvider: 'wss://mainnet.infura.io/ws', // for WebsocketProvider
-      ethProviderType: 'WebsocketProvider', // 'HttpProvider' / 'WebsocketProvider'
       chainId: 0 // TODO
     },
 
     'ropsten': {
       description: 'Test network',
       testnet: true,
-      digioptionsBaseUrl: 'https://www.digioptions.com/',
+      digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
       etherscanAddressUrl: 'https://ropsten.etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://ropsten.etherscan.io/address/{tx}',
       contractDescriptions: [
@@ -52,14 +51,13 @@
       xmppJidPassword: ['anon@ropsten.xmpp.digioptions.com', 'password'],
       xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=ropsten&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
       ethProvider: 'wss://ropsten.infura.io/ws', // for WebsocketProvider
-      ethProviderType: 'WebsocketProvider', // 'HttpProvider' / 'WebsocketProvider'
       chainId: 0 // TODO
     },
 
     'kovan': {
       description: 'Proof-of-authority test network',
       testnet: true,
-      digioptionsBaseUrl: 'https://www.digioptions.com/',
+      digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
       etherscanAddressUrl: 'https://kovan.etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://kovan.etherscan.io/address/{tx}',
       contractDescriptions: [],
@@ -71,14 +69,13 @@
       xmppJidPassword: ['anon@kovan.xmpp.digioptions.com', 'password'],
       xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=kovan&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
       ethProvider: 'wss://kovan.infura.io/ws', // for WebsocketProvider
-      ethProviderType: 'WebsocketProvider', // 'HttpProvider' / 'WebsocketProvider'
       chainId: 0 // TODO
     },
 
     'rinkeby': {
       description: 'Clique-consensus test network',
       testnet: true,
-      digioptionsBaseUrl: 'https://www.digioptions.com/',
+      digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
       //etherscanApiUrl: 'https://rinkeby.etherscan.io/api',
       etherscanAddressUrl: 'https://rinkeby.etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://rinkeby.etherscan.io/address/{tx}',
@@ -91,7 +88,6 @@
       xmppJidPassword: ['anon@rinkeby.xmpp.digioptions.com', 'password'],
       xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=rinkeby&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
       ethProvider: 'wss://rinkeby.infura.io/ws', // for WebsocketProvider
-      ethProviderType: 'WebsocketProvider', // 'HttpProvider' / 'WebsocketProvider'
       chainId: 0 // TODO
     }
 

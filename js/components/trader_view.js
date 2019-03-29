@@ -30,7 +30,7 @@
   var quoteProvider = digioptionsTools.quoteProvider;
 
   function TraderViewTop() {
-    React.Component.constructor.call(this);
+    React.PureComponent.constructor.call(this);
     var self = this;
 
     self.render = function(){
@@ -39,10 +39,10 @@
       );
     };
   }
-  TraderViewTop.prototype = Object.create(React.Component.prototype);
+  TraderViewTop.prototype = Object.create(React.PureComponent.prototype);
 
   function TraderView() {
-    React.Component.constructor.call(this);
+    React.PureComponent.constructor.call(this);
     var self = this;
 
     self.render = function(){
@@ -79,7 +79,7 @@
       );
     };
   }
-  TraderView.prototype = Object.create(React.Component.prototype);
+  TraderView.prototype = Object.create(React.PureComponent.prototype);
 
   return {
     TraderView: TraderView,

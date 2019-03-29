@@ -193,8 +193,8 @@
         var urlHist = that.urlBase + pathHist;
         return request(urlHist, {method: 'GET'});
       })
-      .then(function(answer) {
-        var resp = JSON.parse(answer);
+      .then(function(response) {
+        var resp = JSON.parse(response);
         historyCallback(resp);
       })
       .catch(function(error){
@@ -260,17 +260,6 @@
     }
   };
 
-  QuoteProvider.prototype.getProviderDataFromSymbol = function(symbol){
-    var i;
-    for (i=0 ; i < symbolFuncToProviderInstantiate.length ; i ++){
-      var providerData = symbolFuncToProviderInstantiate[i](symbol); 
-      if (providerData){
-        return providerData;
-      }
-    }
-    return null;
-  };
-
   QuoteProvider.prototype.realtime = function(symbol, resp)
   {
     if (this.realtimeCallback)
@@ -285,8 +274,10 @@
 
   QuoteProvider.prototype.close = function()
   {
-    // no more callbacks
-    this.historyCallback = null;
+    // allow already running historyCallback
+    //this.historyCallback = null;
+
+    // no more push data callbacks
     this.realtimeCallback = null;
 
     for (var key in this.providers) {
@@ -298,8 +289,20 @@
 
   };
 
+  var getProviderDataFromSymbol = function(symbol){
+    var i;
+    for (i=0 ; i < symbolFuncToProviderInstantiate.length ; i ++){
+      var providerData = symbolFuncToProviderInstantiate[i](symbol); 
+      if (providerData){
+        return providerData;
+      }
+    }
+    return null;
+  };
+
   return {
     'QuoteProvider': QuoteProvider,
+    'getProviderDataFromSymbol': getProviderDataFromSymbol,
     'BitfinexProvider': BitfinexProvider,
     'KeyTimestampMs': KeyTimestampMs,
     'KeyValue': KeyValue,

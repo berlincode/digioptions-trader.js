@@ -25,7 +25,8 @@
 
   var dbRunning = false;
   var db = null;
-  var dbUserVersion = 3;
+  var sizeInBytes = null;
+  var dbUserVersion = 5;
   var jsonTables = {};
   var version;
 
@@ -237,8 +238,9 @@
   };
 
   var sqlCommandsExtra = [
-    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndex ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash");',
-    'CREATE INDEX IF NOT EXISTS MarketIndex ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash", "traderProps.data.dateMs");'
+    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash");',
+    'CREATE INDEX IF NOT EXISTS MarketIndex ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash", "traderProps.data.dateMs");',
+    'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash", "traderProps.data.dateMs");'
   ];
 
   var insertJson = function(tableName, data){
@@ -256,6 +258,13 @@
         )
       );
     }
+  };
+
+  var updateSize = function(){
+    promisify(db, db.get)('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
+      .then(function(result){
+        sizeInBytes = result.size;
+      });
   };
 
   var setup = function(filename, ver){
@@ -310,16 +319,21 @@
           return Promise.resolve();
 
         console.log('Need to reset database');
-        return promisify(db, db.run)(
+        var commands = [
           // update user_version
-          'PRAGMA user_version = ' + dbUserVersion + ';' +
+          'PRAGMA user_version = ' + dbUserVersion + ';',
           // drop all tables / indexes / triggers
-          'PRAGMA writable_schema = 1;' +
-          'DELETE FROM sqlite_master WHERE type IN ("table", "index", "trigger");' +
-          'PRAGMA writable_schema = 0;' +
+          'PRAGMA writable_schema = 1;',
+          'DELETE FROM sqlite_master WHERE type IN ("table", "index", "trigger");',
+          'PRAGMA writable_schema = 0;',
           // free space
           'VACUUM;'
-        );
+        ];
+        return commands.reduce(function(previousPromise, sql) {
+          return previousPromise.then(function() {
+            return promisify(db, db.run)(sql);
+          });
+        }, Promise.resolve());
       })
       .then(function() {
         // create all tables
@@ -344,6 +358,7 @@
       .then(function() {
         console.log('database setup successful');
         dbRunning = true;
+        updateSize();
       })
       .catch(function(err) {
         console.log('sqlite error:', err.message);
@@ -357,6 +372,10 @@
     return dbRunning;
   };
 
+  var size = function(){
+    return sizeInBytes;
+  };
+
   var unflattenFromDictJson = function(rowJson){
     var row = {};
     Object.keys(rowJson).forEach(function(key){row[key] = JSON.parse(rowJson[key]);});
@@ -366,6 +385,7 @@
   return {
     setup: setup,
     isRunning: isRunning,
+    size: size, 
     flatten: flatten,
     unflatten: unflatten,
     insertJson: insertJson,

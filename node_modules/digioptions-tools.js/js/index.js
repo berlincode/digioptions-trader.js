@@ -41,7 +41,8 @@
     case 2: duration = 'weekly'; break;
     case 3: duration = 'daily'; break;
     case 4: duration = 'hourly'; break;
-    default: duration = '-'; break;
+    case 5: duration = 'short term'; break; // TODO better name
+    default: duration = '-' ; break;
     }
     return duration;
   }

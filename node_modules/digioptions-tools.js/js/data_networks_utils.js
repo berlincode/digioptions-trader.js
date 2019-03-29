@@ -50,38 +50,38 @@
 
   var digioptionsUrlNameToData = {
     pageStart: {
-      baseUrl: 'index.htm#',
+      baseUrl: '#',
       args: []
     },
     pageNetwork: {
-      baseUrl: 'index.htm#/{network}',
+      baseUrl: '#/{network}',
       args: ['network']
     },
     pageMarketList: {
-      baseUrl: 'index.htm#/{network}/{marketsAddr}/list',
+      baseUrl: '#/{network}/{marketsAddr}/list',
       args: ['network', 'marketsAddr']
     },
     pageMarketListSelected: { // same as 'pageMarketList', but with marketFactHash selected
-      baseUrl: 'index.htm#/{network}/{marketsAddr}/{marketFactHash}/list',
+      baseUrl: '#/{network}/{marketsAddr}/{marketFactHash}/list',
       args: ['network', 'marketsAddr', 'marketFactHash']
     },
     pageHistory: { /* contract deposits and withdrawals */
-      baseUrl: 'index.htm#/{network}/{marketsAddr}/depositwithdraw',
+      baseUrl: '#/{network}/{marketsAddr}/depositwithdraw',
       args: ['network', 'marketsAddr']
     },
     pageMarket: {
-      baseUrl: 'index.htm#/{network}/{marketsAddr}/{marketFactHash}',
+      baseUrl: '#/{network}/{marketsAddr}/{marketFactHash}',
       args: ['network', 'marketsAddr', 'marketFactHash']
     },
     pageTransactions: {
-      baseUrl: 'index.htm#/{network}/{marketsAddr}/{marketFactHash}/transactions',
+      baseUrl: '#/{network}/{marketsAddr}/{marketFactHash}/transactions',
       args: ['network', 'marketsAddr', 'marketFactHash']
-    },
+    }//,
     /* static files */
-    pageImprint: {
-      baseUrl: 'imprint.htm',
-      args: []
-    }
+    //pageImprint: {
+    //  baseUrl: 'imprint.html',
+    //  args: []
+    //}
   };
 
   function getDigioptionsUrl(urlName, args, relativeUrl){
@@ -166,15 +166,9 @@
     return dataNetwork.xmppJidPassword;
   }
 
-  function getProvider(Web3, network){
+  function getProvider(network){
     var dataNetwork = dataNetworks[network];
-    if (dataNetwork.ethProviderType === 'HttpProvider'){
-      return new Web3.providers.HttpProvider(dataNetwork.ethProvider);
-    }
-    else if (dataNetwork.ethProviderType === 'WebsocketProvider'){
-      return new Web3.providers.WebsocketProvider(dataNetwork.ethProvider);
-    }
-    throw 'unknown providerType: ' + dataNetwork.ethProviderType;
+    return dataNetwork.ethProvider;
   }
 
   return {
