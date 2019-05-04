@@ -104,9 +104,9 @@
               React.createElement('br', null),
               'expiration (epoch seconds): ' + this.props.marketDefinition.marketBaseData.expiration,
               React.createElement('br', null),
-              'expiration (local): ' + utils.dateStringLocal(expirationDate),
+              'expiration (local): ' + digioptionsTools.dateStringLocalTZ(expirationDate),
               React.createElement('br', null),
-              'expiration (UTC): ' + utils.dateStringUTC(expirationDate),
+              'expiration (UTC): ' + digioptionsTools.dateStringUTCTZ(expirationDate),
               React.createElement('br', null)
             )
           ),

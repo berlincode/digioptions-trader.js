@@ -46,7 +46,7 @@
         expired==false and meanwhile the market expired. It might be used to
         terminate the market.
     * updateBlock()
-    * receivedOrder()
+    * receivedsOrder()
 
   Terminated markets are unsubscribed from xmpp orderbook feed and may be
   removed from memory.
@@ -62,7 +62,7 @@
     data,
     expired,
     blockHeaderInitial,
-    orderBookPublish,
+    offersPublish,
     quoteProvider
   ){
     this.contentUpdated = contentUpdated;
@@ -71,7 +71,7 @@
     this.blockHeaderInitial = blockHeaderInitial;
     this.marketDefinition = marketDefinition;
     this.data = data;
-    this.orderBookPublish = orderBookPublish;
+    this.offersPublish = offersPublish;
     this.quoteProvider = quoteProvider;
 
     this.content = null;
@@ -79,12 +79,12 @@
     this.pubsub_message_count = 0;
     this.timer = undefined;
     this.terminated = false; // terminated old Market may be removed from memory
-    this.blockNumber = undefined;
+    this.blockHeader = undefined;
     this.trader = null;
     this.traderInfo = null;
 
     this.account = web3.eth.accounts.wallet.accounts[0]; // default is to take the first account
-    var that = this;
+    var self = this;
 
     // check if market should be started at all?
     if (this.expired){
@@ -99,11 +99,12 @@
       this.terminated = true;
       return;
     }
-    that.quoteProvider.setup(providerData);
+    self.quoteProvider.setup(providerData);
 
     try {
       this.trader = new trader.Trader(
-        this.marketDefinition
+        this.marketDefinition,
+        this.genOrder.bind(this)
       );
     }catch(err) {
       this.traderInfo = 'not started: ' + err;
@@ -126,13 +127,8 @@
     return this.marketDefinition.contractAddr;
   };
 
-  Market.prototype.genOrder = function(callbackBrowserOrder){
-    var that = this;
-
-    var traderResults = this.trader.exec(
-      this.blockNumber
-    );
-    var orders=traderResults.orders;
+  Market.prototype.genOrder = function(orders){
+    var self = this;
 
     if (! this.account){
       this.traderInfo = 'Error: No account defined. Please configure an ethereum account in config.js!';
@@ -148,50 +144,20 @@
     for (var i=0 ; i < orders.length ; i ++){
       var order = Object.assign(
         { // use default values if not excplicitly set
-          offerOwner: that.account.address,
-          marketsAddr: that.marketDefinition.contractAddr,
-          marketFactHash: that.marketDefinition.marketFactHash
+          offerOwner: self.account.address,
+          marketsAddr: self.marketDefinition.contractAddr,
+          marketFactHash: self.marketDefinition.marketFactHash
         },
         orders[i]
       );
       var orderSigned = digioptionsContracts.signOrder(this.web3, this.account.privateKey, order);
       ordersSigned.push(orderSigned);
     } 
-    this.orderBookPublish(ordersSigned);
-
-    return;
-    //var normalize_order = digioptionsTools.normalize_order;
-
-    //utils.call(this.web3, this.marketsContract, order.contractAddr, 'getFunds', [this.marketFactHash, order.offerOwner, false], function(err, result) {
-    utils.call(this.web3, this.marketDefinition.contractAddr, order.contractAddr, 'getFunds', [this.marketDefinition.marketFactHash, order.offerOwner, false], function(err, result) {
-
-      // TODO check err
-      //console.log('toNumber', result);
-      var balance = result;
-      //utils.call(web3, this.marketsContract, order.contractAddr, 'getMaxLossAfterTrade', [this.marketFactHash, order.offerOwner, order.optionID, order.size, -order.size*order.price], function(err, result) {
-      utils.call(web3, this.marketDefinition.contractAddr, order.contractAddr, 'getMaxLossAfterTrade', [this.marketDefinition.marketFactHash, order.offerOwner, order.optionID, order.size, -order.size*order.price], function(err, result) {
-        //balance = balance + result.toNumber();
-        balance = balance + result;
-        balance += 1000000;// TODO fake balance
-        //console.log('hash', hash, order.hash );
-        //callbackBrowserOrder();
-        if (balance <= 0) { // TODO
-          // TODO should there be an error log to browser and disk (if running as daemon)?
-          console.log('You tried sending an order to the order book, but you do not have enough funds to place your order. You need to add '+(utils.weiToEth(-balance))+' eth to your account to cover this trade. ');
-        } else if (that.blockNumber <= order.blockExpires) {
-          orders.push(order);
-          console.log('added 1 order ready to publish ' + orders.length);
-          callbackBrowserOrder(orders);
-        } else {
-          console.log('invalid order');
-          //callbackBrowserOrder();
-        }
-      });
-    });
+    this.offersPublish(ordersSigned);
   };
 
-  Market.prototype.receivedOrder = function(order){
-    this.pubsub_message_count ++;
+  Market.prototype.receivedOrders = function(offers){
+    this.pubsub_message_count += offers.length;
     this.updateUI();
   };
 
@@ -223,8 +189,9 @@
   };
 
   Market.prototype.updateBlock = function(blockHeader){
+    this.blockHeader = blockHeader;
+
     var blockNumber = blockHeader.number;
-    this.blockNumber = blockNumber;
     if (blockNumber < this.blockHeaderInitial.number + config.waitBlocks){
       this.content = 'remaining blocks ... ' + (this.blockHeaderInitial.number + config.waitBlocks - blockNumber);
       this.contentUpdated();
@@ -246,10 +213,9 @@
 
   Market.prototype.update = function(){
     this.counter ++;
-    this.genOrder(function(orders){
-      //console.log(orders);
-      ordersPublish(orders);
-    });
+    this.trader.exec(
+      this.blockHeader
+    );
 
     this.updateUI();
   };

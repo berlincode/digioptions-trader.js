@@ -1,6 +1,7 @@
 // vim: sts=2:ts=2:sw=2
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
-/* eslint-env node */
+/* eslint-env node, es6 */
+// this file is only executed under nodejs
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD
@@ -183,10 +184,10 @@
   };
 
   JsonTable.prototype.addColumns = function(db, columnNames, ignoreExistsError){
-    var that = this;
+    var self = this;
     return columnNames.reduce(function(previousPromise, nextID) {
       return previousPromise.then(function() {
-        return that.addColumn(db, nextID, ignoreExistsError);
+        return self.addColumn(db, nextID, ignoreExistsError);
       });
     }, Promise.resolve());
   };
@@ -228,6 +229,7 @@
         'marketDefinition.marketFactHash',
 
         'traderProps.infoStrings',
+        'traderProps.errorStrings',
         'traderProps.data.dateMs',
         'traderProps.data.volatility'
         // add here your custom data columns

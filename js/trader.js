@@ -52,6 +52,7 @@
 
     return optionIDToProbability;
   };
+
   var underlyingToVolatility = {
     // volatility per year - Please adjust!
     'ETH/USDT': 0.31,
@@ -75,6 +76,7 @@
 
     this.data = null;
     this.infoStrings = [];
+    this.errorStrings = [];
 
     db.insertJson('market', {
       marketDefinition: marketDefinition
@@ -84,6 +86,7 @@
   Trader.prototype.stateToProps = function(){
     return {
       infoStrings: this.infoStrings,
+      errorStrings: this.errorStrings,
       quote: this.quote,
       data: this.data
     };
@@ -92,20 +95,13 @@
   Trader.prototype.updateQuote = function(quote){
     // this function is called if a new quote is available
     this.quote = quote;
-    /*
-    console.log('quote',
-      this.marketDefinition.marketBaseData.underlyingString,
-      quote[quoteProvider.KeyTimestampMs],
-      quote[quoteProvider.KeyValue],
-      (new Date()).getTime()
-    );
-    */
   };
 
-  Trader.prototype.exec = function(blockNumber){
+  Trader.prototype.exec = function(/*blockHeader*/){
     //var self = this;
 
     var infoStrings = [];
+    var errorStrings = [];
 
     if (
       (! this.quote) ||
@@ -149,6 +145,7 @@
     };
 
     this.infoStrings = infoStrings;
+    this.errorStrings = errorStrings;
 
     db.insertJson('trader', {
       // add keys to reference table market via market's index

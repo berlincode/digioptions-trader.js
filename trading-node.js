@@ -32,7 +32,7 @@ var clientRequirePathMapping = {
   'digioptions-tools.js': 'node_modules/digioptions-tools.js/js/index',
   'digioptions-contracts.js': 'node_modules/digioptions-contracts.js/index',
   'pubsub': 'node_modules/digioptions-tools.js/js/pubsub',
-  'order_normalize': 'node_modules/digioptions-tools.js/js/order_normalize',
+  'offer_normalize': 'node_modules/digioptions-tools.js/js/offer_normalize',
   'data_networks': 'node_modules/digioptions-tools.js/js/data_networks',
   'data_networks_utils': 'node_modules/digioptions-tools.js/js/data_networks_utils',
   'data_config': 'node_modules/digioptions-tools.js/js/data_config',
@@ -140,7 +140,6 @@ var connect = function(){
     connection.send(
       JSON.stringify({
         type: 'authenticate',
-        network: args.network,
         payload: {token: token}
       })
     );
@@ -225,7 +224,7 @@ class RequestRouter {
   }
 
   handleRequest (request, response) {
-    var pathname = path.normalize(url.parse(request.url).pathname);
+    var pathname = url.resolve('/', url.parse(request.url).pathname);
     for (var i=0; i < this.routes.length ; i++){
       var match = pathname.match(this.routes[i].routeRegExp);
 
@@ -256,12 +255,12 @@ class Server {
 
   start () {
     var core;
-    var sockets = {};
+    var sockets = [];
     var that = this;
 
     // validate credentials
     this.requestRouter.route(
-      /.?/,
+      /.?/,  // matches always
       function(pathname, request, response){
         if (config.basicAuth.enabled){
           // ensure that we have valid credentials
@@ -306,23 +305,29 @@ class Server {
       }
     );
 
+    this.requestRouter.route(
+      /^\/data.json/,
+      function(pathname, request, response){
+        var data = core.stateToProps();
+
+        response.writeHead(200, {'Content-Type': 'application/json'});
+        response.end(JSON.stringify(data));
+        return true;
+      }
+    );
+
+
     var server = http.createServer(
       this.requestRouter.handleRequest.bind(this.requestRouter)
     ).listen(this.port, this.host);
 
     var server_ws = new WebSocketServer({server});
 
-    var socket_enable = function(socket, network){
-      if (! sockets[network])
-        sockets[network] = [];
-
-      sockets[network].push(socket);
+    var socket_enable = function(socket){
+      sockets.push(socket);
 
       // send first update immediately
-      var monitor = core.getMonitor(network);
-      if (monitor){
-        socket.send(JSON.stringify(monitor.stateToProps()));
-      }
+      socket.send(JSON.stringify(core.stateToProps()));
     };
 
     server_ws.on('connection', function(connection) {
@@ -332,21 +337,18 @@ class Server {
         try {
           var data = JSON.parse(message);
           if (data.type === 'authenticate') {
-            var network = data.network || config.networks[0];
 
-            if (! main.networkConfigured(network)){
-              //connection.send(main.navTabs() + 'invalid network'); // TODO
-            } else if (config.basicAuth.enabled){
+            if (config.basicAuth.enabled){
               jwt.verify(data.payload.token, config.basicAuth.jwtSecret, function (err, decoded) {
 
                 if ((! err) && (decoded.name) && config.basicAuth.users[decoded.name]){
-                  socket_enable(connection, network);
+                  socket_enable(connection);
                   //console.log('auth success');
                 }
               });
             } else {
               // no authentication necessary
-              socket_enable(connection, network);
+              socket_enable(connection);
             }
           }
         } catch(err) {
@@ -357,15 +359,13 @@ class Server {
       connection.on('close', function () {
         try {
           //console.log('Socket closed!');
-          config.networks.forEach(function (network){
-            for (var i = 0; i < sockets[network].length; i++) {
-              if (sockets[network][i] == connection) {
-                sockets[network].splice(i, 1);
-                //console.log('Removing socket from collection. Collection length: ' + Object.keys(sockets).length);
-                break;
-              }
+          for (var i = 0; i < sockets.length; i++) {
+            if (sockets[i] == connection) {
+              sockets.splice(i, 1);
+              //console.log('Removing socket from collection. Collection length: ' + Object.keys(sockets).length);
+              break;
             }
-          });
+          }
         }
         catch (e) {
           //console.log(e);
@@ -375,18 +375,15 @@ class Server {
     });
 
 
-    var contentUpdated = function(network){
-      var monitor = core.getMonitor(network);
-      if ((! sockets[network]) || (! monitor))
-        return;
+    var contentUpdated = function(/*network*/){
 
-      var props = monitor.stateToProps();
+      var props = core.stateToProps();
 
       //console.log('Sending data...');
-      for(var i=0;i<sockets[network].length;i++)
+      for(var i=0;i<sockets.length;i++)
       {
         try {
-          sockets[network][i].send(JSON.stringify(props));
+          sockets[i].send(JSON.stringify(props));
         }
         catch (e)
         {
@@ -434,7 +431,7 @@ var setup = function(dbFilename, versionString, httpRoot, clientSetupStr) {
       );
       server.start();
       printInterfaces(port, host);
-      console.log('Hit CTRL-C to stop the server');
+      console.log('setup finished. server running.');
     });
 };
 

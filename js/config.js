@@ -50,24 +50,24 @@
     /*******************/
 
     /* wait some blockchain blocks before starting to trade. Immediately after
-    a restart there might be some of our orders that are still valid, and we
+    a restart there might be some of our offers that are still valid, and we
     want to wait for expiration before starting again*/
     //waitBlocks: 5,
     waitBlocks: 0,
 
     /* Set account(s) for each network via the private key. */
-    accounts: {
+    privateKeys: {
       'main': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ],
       'ropsten': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ],
       'kovan': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ],
       'rinkeby': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ]
     },
 

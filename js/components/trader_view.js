@@ -51,6 +51,7 @@
       //var marketDefinition = this.props.marketDefinition;
 
       var infoStrings = traderProps.infoStrings || ['no infoStrings'];
+      var errorStrings = traderProps.errorStrings;
       var dateQuote = traderProps.quote && utils.dateFromUTCSeconds(traderProps.quote[quoteProvider.KeyTimestampMs]/1000);
 
       return (
@@ -61,15 +62,23 @@
           React.createElement('dd', null,
             'last quote value: ' + (traderProps.quote ? traderProps.quote[quoteProvider.KeyValue] : '-'),
             React.createElement('br', null),
-            'last quote time (local): ' + (dateQuote ? utils.dateStringLocal(dateQuote) : '-'),
+            'last quote time (local): ' + (dateQuote ? digioptionsTools.dateStringLocalTZ(dateQuote) : '-'),
             React.createElement('br', null),
-            'last quote time (UTC): ' + (dateQuote ? utils.dateStringUTC(dateQuote) : '-'),
+            'last quote time (UTC): ' + (dateQuote ? digioptionsTools.dateStringUTCTZ(dateQuote) : '-'),
             React.createElement('br', null),
 
-            React.createElement('div', {key: 'infoStrings'},
-              infoStrings.map(function(infoString, idx){
+            React.createElement('div', {key: 'errorStrings', className: 'bg-danger'},
+              errorStrings.map(function(string, idx){
                 return [
-                  infoString,
+                  string,
+                  React.createElement('br', {key: idx})
+                ];
+              })
+            ),
+            React.createElement('div', {key: 'infoStrings'},
+              infoStrings.map(function(string, idx){
+                return [
+                  string,
                   React.createElement('br', {key: idx})
                 ];
               })

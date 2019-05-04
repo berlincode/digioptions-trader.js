@@ -10,13 +10,13 @@
 
   } else {
     // Browser
-    global.order_normalize = factory();
+    global.offer_normalize = factory();
   }
 })(this, function(){
 
-  function orderNormalize(order){
+  function offerNormalize(offer){
   /*
-  order data example:
+  offer data example:
   {
       "offerOwner": "0x0000000000000000000000000000000000000000",
       "marketsAddr": "0x0000000000000000000000000000000000000000",
@@ -31,35 +31,35 @@
       "v": 27
   }
   */
-    var idx, key, list, normalized_order = {};
-    //console.log("normalize", order);
+    var idx, key, list, offerNormalized = {};
+    //console.log("normalize", offer);
     list = ['offerOwner', 'marketsAddr'];
     for (idx=0 ; idx < list.length ; ++idx){
       key = list[idx];
-      if ((typeof(order[key]) != 'string') || (order[key].length != 42) || (! order[key].startsWith('0x')))
+      if ((typeof(offer[key]) != 'string') || (offer[key].length != 42) || (! offer[key].startsWith('0x')))
         return null;
 
-      normalized_order[key] = order[key].toLowerCase();
+      offerNormalized[key] = offer[key].toLowerCase();
     }
     list = ['r', 's', 'marketFactHash'];
     for (idx=0 ; idx < list.length ; ++idx){
       key = list[idx];
-      if ((typeof(order[key]) != 'string') || (order[key].length != 66) || (! order[key].startsWith('0x')))
+      if ((typeof(offer[key]) != 'string') || (offer[key].length != 66) || (! offer[key].startsWith('0x')))
         return null;
 
-      normalized_order[key] = order[key].toLowerCase();
+      offerNormalized[key] = offer[key].toLowerCase();
     }
     list = ['blockExpires', 'optionID', 'orderID', 'price', 'size', 'v'];
     for (idx=0 ; idx < list.length ; ++idx){
       key = list[idx];
-      if (typeof(order[key]) != 'number')
+      if (typeof(offer[key]) != 'number')
         return null;
 
-      normalized_order[key] = order[key];
+      offerNormalized[key] = offer[key];
     }
 
-    return normalized_order;
+    return offerNormalized;
   }
 
-  return orderNormalize;
+  return offerNormalize;
 });
