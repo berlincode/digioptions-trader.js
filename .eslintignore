@@ -1,2 +1,5 @@
-/js/web3.js
+/js/web3.min.js
+/js/gaussian.js
+/js/babel-polyfill.js
+/js/url-polyfill.js
 /node_modules/

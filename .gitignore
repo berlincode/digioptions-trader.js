@@ -1,5 +1,9 @@
 node_modules
 README.html
 *.custom*
+*.zip
 npm-debug.log
 dist
+trading-browser.plain.html
+_*
+*.db

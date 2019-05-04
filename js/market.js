@@ -4,233 +4,231 @@
     // AMD
     define(
       [
+        'web3',
         'factsigner',
+        'digioptions-tools.js',
+        'digioptions-contracts.js',
         './config',
-        './utils'
-      ], function (
-        factsigner,
-        config,
-        utils) {
-        return factory(
-          factsigner,
-          config,
-          utils
-        ).Market; } );
+        './trader'
+      ],
+      factory
+    );
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
+      require('web3'),
       require('factsigner'),
+      require('digioptions-tools.js'),
+      require('digioptions-contracts.js'),
       require('./config.js'),
-      require('./utils.js')
-    ).Market;
+      require('./trader.js')
+    );
   } else {
     // Global (browser)
-    root.Market = factory(
+    root.market = factory(
+      root.Web3,
       root.factsigner,
+      root.digioptionsTools,
+      root.digioptionsContracts,
       root.config,
-      root.utils
-    ).Market;
+      root.trader
+    );
   }
-})(this, function(factsigner, config, utils){
+})(this, function(Web3, factsigner, digioptionsTools, digioptionsContracts, config, trader){
 
   /*
   Each market class should have following methods:
-    * getContent()
+    * stateToProps()
     * getHeading()
     * isTerminated()
     * expire():
         This function is called if the market was instantiated with
         expired==false and meanwhile the market expired. It might be used to
         terminate the market.
-    * updateBlockNumber()
-    * receivedOrder()
+    * updateBlock()
+    * receivedsOrder()
 
   Terminated markets are unsubscribed from xmpp orderbook feed and may be
   removed from memory.
 
-  The market should call contentUpdated() to signal that getContent()/getHeading()
+  The market should call contentUpdated() to signal that stateToProps()/getHeading()
   may return updated content.
   */
 
   function Market(
     contentUpdated,
     web3,
-    network,
-    chainId,
-    marketsContract,
-    marketFactHash,
-    optionChain,
+    marketDefinition,
+    data,
     expired,
-    blockNumberInitial,
-    orderBookPublish
+    blockHeaderInitial,
+    offersPublish,
+    quoteProvider
   ){
+    this.contentUpdated = contentUpdated;
+    this.web3 = web3;
+    this.expired = expired;
+    this.blockHeaderInitial = blockHeaderInitial;
+    this.marketDefinition = marketDefinition;
+    this.data = data;
+    this.offersPublish = offersPublish;
+    this.quoteProvider = quoteProvider;
 
     this.content = null;
-    this.heading = null;
     this.counter = 0;
     this.pubsub_message_count = 0;
     this.timer = undefined;
     this.terminated = false; // terminated old Market may be removed from memory
-    this.blockNumber = undefined;
-    this.orderID = 0; //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
+    this.blockHeader = undefined;
+    this.trader = null;
+    this.traderInfo = null;
 
-    var account = web3.eth.accounts.wallet[0]; // default is to take the first account
-
-    this.gen_order = function(callbackBrowserOrder){
-      var orders = [];
-      var update = 5;
-      this.orderID ++;
-      var order={
-        addr: account.address,
-        optionID: 0,
-        price: 1,
-        size: 1,
-        orderID: this.orderID, //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
-        blockExpires: this.blockNumber + update,
-        marketsAddr: marketsContract.options.address,
-        marketFactHash: marketFactHash
-      };
-
-      utils.signOrder(web3, order, account.address, function(err, order_signed) {
-        if(!err){
-          // TODO catch err
-          //console.log('ordersig', order_signed);
-          //console.log('ordersig', JSON.stringify(order_signed));
-          //console.log('verifyOrder', utils.verifyOrder(order));
-          orderBookPublish([order_signed]);
-        } else {
-          console.log('error signOrder', err);
-        };
-      });
-      return;
-      //var normalize_order = digioptionsTools.normalize_order;
-
-      utils.call(web3, marketsContract, order.contractAddr, 'getFunds', [marketFactHash, order.addr, false], function(err, result) {
-
-        // TODO check err
-        console.log('toNumber', result);
-        //var balance = result.toNumber();
-        var balance = result;
-        utils.call(web3, marketsContract, order.contractAddr, 'getMaxLossAfterTrade', [marketFactHash, order.addr, order.optionID, order.size, -order.size*order.price], function(err, result) {
-          //balance = balance + result.toNumber();
-          balance = balance + result;
-          balance += 1000000;// TODO fake balance
-          //console.log('hash', hash, order.hash );
-          //callbackBrowserOrder();
-          if (balance<=0) {
-            console.log('You tried sending an order to the order book, but you do not have enough funds to place your order. You need to add '+(utils.weiToEth(-balance))+' eth to your account to cover this trade. ');
-          } else if (blockNumber <= order.blockExpires) {
-            orders.push(order);
-            console.log('added 1 order ready to publish ' + orders.length);
-            callbackBrowserOrder(orders);
-          } else {
-            console.log('invalid order');
-            //callbackBrowserOrder();
-          }
-        });
-      });
-    };
-
-    this.getContent = function(){
-      if (this.content === null){
-        var expirationDate =new Date(optionChain.expiration * 1000);
-        var strikes_strings = optionChain.strikes.map(function(x){return factsigner.toUnitString(x, optionChain.base_unit_exp, optionChain.ndigit);});
-        this.content = (
-          'marketAddr: <span>' + marketsContract.options.address + '</span><br/>' +
-          'counter: <span>' + this.counter + '</span><br/>' +
-          'pubsub_message_count: <span>' + this.pubsub_message_count + '</span><br/>' +
-          'expiration: <span>' + optionChain.expiration + '</span><br/>' +
-          'expiration (local timezone): <span>' + expirationDate + '</span><br/>' +
-          'expiration (UTC): <span>' + expirationDate.toUTCString() + '</span><br/>' +
-          'margin: <span>' + factsigner.toUnitStringExact(optionChain.margin.mul(web3.utils.toBN(100)), optionChain.base_unit_exp) + ' %</span><br/>' +
-          'strikes: <span>' + strikes_strings.join(', ') + '</span><br/>' +
-          'terminated: <span>' + this.terminated + '</span>'
-        );
-      }
-      return this.content;
-    };
-
-    this.getHeading = function(){
-      if (this.heading === null) {
-        this.heading = (
-          '' + marketsContract.options.address.substr(0, 12) + '... | ' +
-          '<span class="hidden-xs">network: </span>' + network + ' | ' +
-          '<span class="hidden-xs">underlying: </span>"' + utils.escape(web3.utils.hexToAscii(optionChain.underlying).split('\0').shift()) + '" ' +
-          (expired ?
-            '<span key="market_open_close" class="label label-default">closed</span>'
-            :
-            '<span key="market_open_close" class="label label-success">open</span>'
-          ) + ' ' +
-
-          //'<span class="badge">0 / 0</span> ' +
-          (this.isTerminated()? '<span class="label label-default">terminated</span>' : '<span class="label label-success">running</span>')
-        );
-      }
-      return this.heading;
-    };
-
-    this.isTerminated = function(){
-      return this.terminated;
-    };
-
-    this.updateUI = function(){
-      // invalidate old content
-      this.content = null;
-      this.heading = null;
-      // signal new content
-      contentUpdated();
-    };
-
-    this.expire = function(){
-      expired = true;
-      this.terminate();
-    };
-
-    this.updateBlockNumber = function(blockNumber){
-      this.blockNumber = blockNumber;
-      if (blockNumber < blockNumberInitial + config.waitBlocks){
-        this.content = 'remaining blocks ... ' + (blockNumberInitial + config.waitBlocks - blockNumber);
-        contentUpdated();
-      }else{
-        //console.log('starting ...');
-        //this.start();
-        this.update();
-      }
-    };
-
-    this.receivedOrder = function(order){
-      this.pubsub_message_count ++;
-      this.updateUI();
-    };
-
-    this.terminate = function(){
-      if (typeof(this.timer) !== 'undefined'){
-        clearInterval(this.timer);
-        this.timer = undefined;
-      }
-      this.terminated = true;
-      this.updateUI();
-    };
-
-    this.update = function(){
-      this.counter ++;
-      this.gen_order(function(orders){
-        console.log(orders);
-        ordersPublish(orders);
-      });
-
-      this.updateUI();
-    };
+    this.account = web3.eth.accounts.wallet.accounts[0]; // default is to take the first account
+    var self = this;
 
     // check if market should be started at all?
-    if (expired){
-      this.content = 'not started';
+    if (this.expired){
+      this.traderInfo = 'not started (already expired)';
       this.terminated = true;
       return;
     }
 
-    this.updateBlockNumber(blockNumberInitial);
+    var providerData = digioptionsTools.quoteProvider.getProviderDataFromSymbol(this.marketDefinition.marketBaseData.underlyingString);
+    if (!providerData){
+      this.traderInfo = 'not started: no quotes available for ' + this.marketDefinition.marketBaseData.underlyingString;
+      this.terminated = true;
+      return;
+    }
+    self.quoteProvider.setup(providerData);
+
+    try {
+      this.trader = new trader.Trader(
+        this.marketDefinition,
+        this.genOrder.bind(this)
+      );
+    }catch(err) {
+      this.traderInfo = 'not started: ' + err;
+      this.terminated = true;
+      return;
+    }
+
+    this.updateBlock(this.blockHeaderInitial);
   }
 
-  return {'Market': Market};
+  Market.prototype.getExpiration = function(){
+    return this.marketDefinition.marketBaseData.expiration;
+  };
+
+  Market.prototype.getUnderlyingString = function(){
+    return this.marketDefinition.marketBaseData.underlyingString;
+  };
+
+  Market.prototype.getContractAddr = function(){
+    return this.marketDefinition.contractAddr;
+  };
+
+  Market.prototype.genOrder = function(orders){
+    var self = this;
+
+    if (! this.account){
+      this.traderInfo = 'Error: No account defined. Please configure an ethereum account in config.js!';
+      return;
+    }
+
+    if (! orders){
+      this.traderInfo = 'No orders';
+      return;
+    }
+
+    var ordersSigned = []; // TODO rename offersSigned
+    for (var i=0 ; i < orders.length ; i ++){
+      var order = Object.assign(
+        { // use default values if not excplicitly set
+          offerOwner: self.account.address,
+          marketsAddr: self.marketDefinition.contractAddr,
+          marketFactHash: self.marketDefinition.marketFactHash
+        },
+        orders[i]
+      );
+      var orderSigned = digioptionsContracts.signOrder(this.web3, this.account.privateKey, order);
+      ordersSigned.push(orderSigned);
+    } 
+    this.offersPublish(ordersSigned);
+  };
+
+  Market.prototype.receivedOrders = function(offers){
+    this.pubsub_message_count += offers.length;
+    this.updateUI();
+  };
+
+  Market.prototype.stateToProps = function(){
+    return {
+      traderProps: this.trader && this.trader.stateToProps(),
+      expired: this.expired,
+      data: this.data,
+      marketDefinition: this.marketDefinition,
+      terminated: this.terminated,
+      contractAddr: this.marketDefinition.contractAddr,
+      counter: this.counter,
+      pubsub_message_count: this.pubsub_message_count,
+      traderInfo: this.traderInfo,
+      marketFactHash: this.marketDefinition.marketFactHash
+    };
+  };
+
+  Market.prototype.updateUI = function(){
+    // invalidate old content
+    this.content = null;
+    // signal new content
+    this.contentUpdated();
+  };
+
+  Market.prototype.expire = function(){
+    this.expired = true;
+    this.terminate();
+  };
+
+  Market.prototype.updateBlock = function(blockHeader){
+    this.blockHeader = blockHeader;
+
+    var blockNumber = blockHeader.number;
+    if (blockNumber < this.blockHeaderInitial.number + config.waitBlocks){
+      this.content = 'remaining blocks ... ' + (this.blockHeaderInitial.number + config.waitBlocks - blockNumber);
+      this.contentUpdated();
+    }else{
+      //console.log('starting ...');
+      //this.start();
+      this.update();
+    }
+  };
+
+  Market.prototype.terminate = function(){
+    if (typeof(this.timer) !== 'undefined'){
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+    this.terminated = true;
+    this.updateUI();
+  };
+
+  Market.prototype.update = function(){
+    this.counter ++;
+    this.trader.exec(
+      this.blockHeader
+    );
+
+    this.updateUI();
+  };
+
+  Market.prototype.isTerminated = function(){
+    return this.terminated;
+  };
+
+  Market.prototype.isExpired = function(){
+    return this.expired;
+  };
+
+  return {
+    Market: Market
+  };
 });

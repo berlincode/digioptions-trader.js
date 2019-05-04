@@ -5,35 +5,26 @@
     define(
       [
         'web3'
-      ], function (
-        Web3
-      ) {
-        return factory(
-          Web3
-        ).config; } );
+      ],
+      factory
+    );
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
       require('web3')
-    ).config;
+    );
   } else {
     // Global (browser)
     root.config = factory(
-      root.Web3
-    ).config;
+      root.web3
+    );
   }
 })(this, function(Web3){
 
-  var web3 = new Web3(); // eslint-disable-line  no-unused-vars
+  // TODO dummy
+  var web3 = new Web3('http://localhost:8545'); // eslint-disable-line  no-unused-vars
 
   var config = {
-    //pubsub_protocol: 'ws', /* websocket push */
-    //pubsub_protocol: 'http', /* http bosh */
-    //pubsub_host: 'ulf',
-    // TODO
-    pubsub_protocol: 'wss', /* websocket */
-    pubsub_host: 'ropsten.xmpp.digioptions.com',
-
 
     /**************************/
     /* MarketMonitor settings */
@@ -59,24 +50,24 @@
     /*******************/
 
     /* wait some blockchain blocks before starting to trade. Immediately after
-    a restart there might be some of our orders that are still valid, and we
+    a restart there might be some of our offers that are still valid, and we
     want to wait for expiration before starting again*/
-    waitBlocks: 5,
-    //waitBlocks: 0,
+    //waitBlocks: 5,
+    waitBlocks: 0,
 
     /* Set account(s) for each network via the private key. */
-    accounts: {
+    privateKeys: {
       'main': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ],
       'ropsten': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ],
       'kovan': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ],
       'rinkeby': [
-        //web3.eth.accounts.privateKeyToAccount(<your-private-key>)
+        //'0x<your-private-key>',
       ]
     },
 
@@ -88,7 +79,8 @@
     /* optional basic authentication for nodejs server */
     basicAuth:{
       enabled: false,
-      jwtSecret: null, /* if enabled is true you have to supply a secret */
+      realm: 'digioptions-trader.js',
+      jwtSecret: null, /* if enabled is true you have to supply a secret (a long random string) */
       jwtExpiresIn: '30d', /* expiration time of javascript web token */
       users: { // username (key) and password (value)
         //'admin': 'options'
@@ -97,5 +89,5 @@
 
   };
 
-  return {'config': config};
+  return config;
 });

@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -9,18 +9,27 @@
     "email": "elastic.code@gmail.com"
   },
   "scripts": {
-    "serve": "http-server . -a 127.0.0.1 -p 8888 -c-1",
-    "eslint": "eslint ./*.js ./js/ ./test/*.js ./*.html"
+    "eslint": "eslint ./*.js ./js/ ./*.html",
+    "postinstall": "patch-package"
   },
   "files": [
-    "js/web3.js",
-    "js/utils.js",
+    "js/babel-polyfill.js",
     "js/config.js",
-    "LICENSE",
-    "img/digioptions.png",
-    "img/github_ribbon.png",
+    "js/db.js",
+    "js/gaussian.js",
     "js/main.js",
     "js/market.js",
+    "js/trader.js",
+    "js/url-polyfill.js",
+    "js/web3.min.js",
+    "js/components/main_view.js",
+    "js/components/market_view.js",
+    "js/components/sidebar.js",
+    "js/components/trader_view.js",
+    "js/components/utils.js",
+    "LICENSE",
+    "img/github_ribbon.png",
+    "patches/",
     "README.md",
     "trading-browser.html",
     "trading-node.js"
@@ -34,37 +43,29 @@
     "smart contract",
     "ethereum"
   ],
-  "node_deb": {
-    "init": "auto",
-    "maintainer": "elastic.code@gmail.com",
-    "install_strategy": "copy",
-    "entrypoints": {
-      "daemon": "trading-node.js --port=8100 --host==127.0.0.1"
-    },
-    "user": "digioptions-trader",
-    "group": "digioptions-trader"
-  },
   "dependencies": {
     "basic-auth": "^1.1.0",
-    "bootstrap": "^3.3.7",
-    "factsigner": "git+https://github.com/berlincode/factsigner",
+    "bootstrap": "^3.4.0",
     "digioptions-contracts.js": "git+https://github.com/berlincode/digioptions-contracts.js.git",
     "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
-    "jquery": "^3.2.1",
-    "jsdom": "^11.0.0",
-    "jsonwebtoken": "^7.4.1",
+    "factsigner": "git+https://github.com/berlincode/factsigner",
+    "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
-    "react": "^15.0.2",
-    "react-dom": "^15.0.2",
-    "react-html-parser": "^2.0.2",
-    "requirejs": "^2.3.3",
-    "web3": "1.0.0-beta.31",
-    "websocket": "1.0.25",
-    "xhr2": "^0.1.4"
+    "patch-package": "6.0.5",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "requirejs": "^2.3.6",
+    "sqlite3": "^4.0.4",
+    "web3": "1.0.0-beta.54",
+    "ws": "^6.0.0"
   },
   "devDependencies": {
-    "http-server": "^0.10.0",
-    "eslint": "4.18.2",
-    "eslint-plugin-html": "4.0.2"
+    "eslint": "^5.15.1",
+    "eslint-plugin-html": "^5.0.0",
+    "eslint-plugin-ie11": "^1.0.0",
+    "mocha": "^6.0.2"
+  },
+  "engine": {
+    "node": "10.6.0"
   }
 }
