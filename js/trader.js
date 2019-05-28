@@ -70,7 +70,7 @@
     if (! this.volatility)
       throw 'unknown volatility for ' + this.marketDefinition.marketBaseData.underlyingString;
 
-    this.orderID = 0; //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
+    this.offerID = 0; //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
     this.offerStoreTmp = []; // TODO remove
     this.quote = null;
 
@@ -152,7 +152,7 @@
       marketDefinition: {
         network: this.marketDefinition.network,
         contractAddr: this.marketDefinition.contractAddr,
-        marketFactHash: this.marketDefinition.marketFactHash
+        marketHash: this.marketDefinition.marketHash
       },
       // log everything that is required to render TraderView()
       traderProps: this.stateToProps()

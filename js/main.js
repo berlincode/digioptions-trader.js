@@ -6,8 +6,8 @@
       [
         './config',
         'factsigner',
-        'digioptions-tools.js',
         'digioptions-contracts.js',
+        'digioptions-tools.js',
         'web3',
         './market'
         //'./db'
@@ -19,8 +19,8 @@
     module.exports = factory(
       require('./config.js'),
       require('factsigner'),
-      require('digioptions-tools.js'),
       require('digioptions-contracts.js'),
+      require('digioptions-tools.js'),
       require('web3'),
       require('./market.js'),
       require('./db.js')
@@ -30,14 +30,14 @@
     root.main = factory(
       root.config,
       root.factsigner,
-      root.digioptionsTools,
       root.digioptionsContracts,
+      root.digioptionsTools,
       root.web3,
       root.market
       //root.db
     );
   }
-})(this, function(config, factsigner, digioptionsTools, digioptionsContracts, Web3, market, db){
+})(this, function(config, factsigner, digioptionsContracts, digioptionsTools, Web3, market, db){
   var PubSub = digioptionsTools.PubSub;
   var QuoteProvider = digioptionsTools.quoteProvider.QuoteProvider;
   //var KeyTimestampMs = digioptionsTools.quoteProvider.KeyTimestampMs;
@@ -51,7 +51,7 @@
     this.quoteProvider = quoteProvider;
     this.web3 = null;
 
-    var web3 = new Web3('http://localhost:8545'); // TODO dummy
+    var web3 = new Web3();
 
     this.dataNetwork = digioptionsTools.dataNetworks[network];
     this.accounts = config.privateKeys[this.network].map(function (account){
@@ -91,8 +91,8 @@
     var sortedMarketKeys = this.getSortedMarketKeys(this.markets);
 
     var marketProps = {};
-    sortedMarketKeys.forEach(function (marketFactHash){
-      marketProps[marketFactHash] = self.markets[marketFactHash].stateToProps();
+    sortedMarketKeys.forEach(function (marketHash){
+      marketProps[marketHash] = self.markets[marketHash].stateToProps();
     });
 
     return {
@@ -102,7 +102,7 @@
       pubsubFeedbackMsg: this.pubsubFeedbackMsg,
       pubsubMessageCount: this.pubsubMessageCount,
       accounts: this.accounts,
-      contractAddresses: this.dataNetwork.contractDescriptions.map(function(x){return x.addr;}),
+      contractAddresses: config.contractAddresses[this.network],
       blockHeader: this.blockHeader && {
         // send only selected properties of blockHeader
         timestamp: this.blockHeader.timestamp,
@@ -133,17 +133,17 @@
     }
   };
 
-  Monitor.prototype.setupMarket = function(contractAddr, marketFactHash){
+  Monitor.prototype.setupMarket = function(contractAddr, marketsAddr, marketHash){
     var self = this;
-    var contract = new this.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), contractAddr);
+    var contract = new this.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
 
-    var key = marketFactHash.toLowerCase();
+    var key = marketHash.toLowerCase();
     if (this.markets[key]){
       // market already exists
       return;
     }
 
-    contract.methods.getMarketData(marketFactHash).call()
+    contract.methods.getMarketData(marketHash).call()
       .then(function(result) {
 
         var data = {
@@ -158,21 +158,23 @@
           expiration: Number(result.marketBaseData.expirationDatetime),
           underlying: result.marketBaseData.underlying,
           underlyingString: factsigner.hexToString(result.marketBaseData.underlying),
-          transactionFeeStringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee).mul(self.web3.utils.toBN('100')), Number(result.marketBaseData.baseUnitExp)),
+          transactionFee0StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee0).mul(self.web3.utils.toBN('100')), Number(result.marketBaseData.baseUnitExp)),
+          transactionFee1StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee1).mul(self.web3.utils.toBN('100')), Number(result.marketBaseData.baseUnitExp)),
           ndigit: Number(result.marketBaseData.ndigit),
           signerAddr: result.marketBaseData.signerAddr,
           // TODO parseFloat
           strikesFloat: result.marketBaseData.strikes.map(function(x){return parseFloat(factsigner.toUnitString(self.web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit)));}),
-          strikesStrings: result.marketBaseData.strikes.map(function(x){return factsigner.toUnitString(self.web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit));})
+          strikesStrings: result.marketBaseData.strikes.map(function(x){return factsigner.toUnitString(self.web3.utils.toBN(x), Number(result.marketBaseData.baseUnitExp), Number(result.marketBaseData.ndigit));}),
+          typeDuration: Number(result.marketBaseData.typeDuration)
         };
 
         var marketDefinition = { // constant market definition
           network: self.network,
           chainID: self.dataNetwork.chainID,
           contractAddr: contractAddr,
-          marketFactHash: marketFactHash,
-          marketBaseData: marketBaseData,
-          typeDuration: Number(result.data.typeDuration)
+          marketsAddr: marketsAddr,
+          marketHash: marketHash,
+          marketBaseData: marketBaseData
         };
 
         //console.log('new market (real trigger)', key);
@@ -185,7 +187,7 @@
           self.blockHeader,
           function(data_array) { // offersPublish
             if ((self.pubsub) && (self.pubsub_feedback_connection_ok)){ // TODO
-              self.pubsub.publish(data_array, contractAddr, marketFactHash);
+              self.pubsub.publish(data_array, marketsAddr, marketHash);
             }
           },
           self.quoteProvider
@@ -193,7 +195,7 @@
         self.updateUI(); // to show the new market immediately
 
         if (! self.markets[key].isTerminated()){
-          self.pubsub.subscribe(contractAddr, marketFactHash);
+          self.pubsub.subscribe(contractAddr, marketHash);
         }
       });
 
@@ -203,24 +205,60 @@
     var self = this;
     var now = Math.floor(Date.now() / 1000);
 
-    this.dataNetwork.contractDescriptions.forEach(function (marketsDescription){
-      var contractAddr = marketsDescription.addr;
+    config.contractAddresses[self.network].forEach(function (contractAddr){
+      var marketsAddr;
+      var contractMarketListerDetails = null;
+      var contractMarketsDetails = null;
 
-      // check for new markets
-      var contract = new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), contractAddr);
-      //console.log('getMarketDataList', contractAddr);
-      /* set the seconds so that even on sunday evening we would see some (closed markets) */
-      // TODO 20 (create config variable)
-      contract.methods.getMarketDataList(false, false, now - config.marketsListExpiredSeconds, 20, []).call()
+      // use any contract abi for calling getContractInfo()
+      var contract = new self.web3.eth.Contract(
+        digioptionsContracts.digioptionsMarketsAbi(),
+        contractAddr
+      );
+
+      contract.methods.getContractInfo().call()
+        .then(function(contractInfo) {
+          //console.log('contractInfo', contractInfo);
+
+          //let contractMarketLister = null;
+          if (contractInfo.contractType === digioptionsContracts.contractType.CONTRACT_DIGIOPTIONSMARKETLISTER){
+
+            contractMarketListerDetails = {
+              contract: new self.web3.eth.Contract(
+                digioptionsContracts.digioptionsMarketListerAbi(),
+                contractAddr
+              ),
+              version: digioptionsContracts.versionFromInt(contractInfo.versionMarketLister),
+              address: contractAddr
+            };
+          }
+
+          contractMarketListerDetails = {
+            contract: new self.web3.eth.Contract(
+              digioptionsContracts.digioptionsMarketsAbi(),
+              contractInfo.digiOptionsMarketsAddr
+            ),
+            version: digioptionsContracts.versionFromInt(contractInfo.versionMarkets),
+            address: contractInfo.digiOptionsMarketsAddr
+          };
+
+          marketsAddr = contractInfo.digiOptionsMarketsAddr;
+
+          // check for new markets
+          //console.log('getMarketDataList', contractAddr);
+          /* set the seconds so that even on sunday evening we would see some (closed markets) */
+          // TODO 20 (create config variable)
+          return contract.methods.getMarketDataList(false, false, now - config.marketsListExpiredSeconds, 20, []).call();
+        })
         .then(function(marketDataList) {
           marketDataList = marketDataList.filter(function(marketData){return marketData.marketBaseData.expirationDatetime > 0;});
           //console.log('MarketList', marketDataList);
           for (var i=0 ; i < marketDataList.length ; i++){
-            var marketFactHash = marketDataList[i].marketFactHash;
-            var key = marketFactHash.toLowerCase();
+            var marketHash = marketDataList[i].marketHash;
+            var key = marketHash.toLowerCase();
             if (! self.markets[key]){
-              //console.log('new market (getMarketData)', key);
-              self.setupMarket(contractAddr, marketFactHash);
+              //console.log('new market', contractAddr, marketsAddr, marketHash);
+              self.setupMarket(contractAddr, marketsAddr, marketHash);
             }
           }
         });
@@ -238,7 +276,7 @@
         var offer = data[i];
         offer = digioptionsTools.offerNormalize(offer);
         if (offer) {
-          var key0 = offer.marketFactHash.toLowerCase(); // TODO rename key
+          var key0 = offer.marketHash.toLowerCase(); // TODO rename key
           var market = this.markets[key0];
           if (! market){
             // TODO log info
@@ -288,12 +326,12 @@
     var self = this;
 
     var sortedMarketKeys = this.getSortedMarketKeys(this.markets);
-    sortedMarketKeys.forEach(function (marketFactHash){
-      var market = self.markets[marketFactHash];
+    sortedMarketKeys.forEach(function (marketHash){
+      var market = self.markets[marketHash];
       // TODO rename marketDetails
       if (! market.isExpired()) {
-        var contract = new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), market.getContractAddr());
-        contract.methods.getMarketData(marketFactHash).call() // TODO what if web3 had reconnected?
+        var contract = new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), market.getMarketsAddr());
+        contract.methods.getMarketData(marketHash).call() // TODO what if web3 had reconnected?
           .then(function(result) {
             var expired = result.data.settled;
             if (expired && (! market.isExpired())){
@@ -314,8 +352,8 @@
     else if (this.blockHeader.number !== blockHeader.number){
       // blockNumer has changed
       var sortedMarketKeys = this.getSortedMarketKeys(this.markets);
-      sortedMarketKeys.forEach(function (marketFactHash){
-        var market = self.markets[marketFactHash];
+      sortedMarketKeys.forEach(function (marketHash){
+        var market = self.markets[marketHash];
         if (! market.isTerminated())
           market.updateBlock(blockHeader);
       });
@@ -439,8 +477,8 @@
     config.networks.forEach(function (network){
       var monitor = self.monitors[network];
 
-      for (var marketFactHash in monitor.markets){
-        var market = monitor.markets[marketFactHash];
+      for (var marketHash in monitor.markets){
+        var market = monitor.markets[marketHash];
         if (
           (! market.isTerminated()) &&
           (market.getUnderlyingString() === symbol)

@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -9,7 +9,7 @@
     "email": "elastic.code@gmail.com"
   },
   "scripts": {
-    "eslint": "eslint ./*.js ./js/ ./*.html",
+    "eslint": "eslint . ./js/ ./*.html",
     "postinstall": "patch-package"
   },
   "files": [
@@ -45,22 +45,22 @@
   ],
   "dependencies": {
     "basic-auth": "^1.1.0",
-    "bootstrap": "^3.4.0",
+    "bootstrap": "^3.4.1",
     "digioptions-contracts.js": "git+https://github.com/berlincode/digioptions-contracts.js.git",
     "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
-    "factsigner": "git+https://github.com/berlincode/factsigner",
+    "factsigner": "git+https://github.com/berlincode/factsigner.git",
     "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
     "patch-package": "6.0.5",
-    "react": "^16.6.3",
-    "react-dom": "^16.6.3",
-    "requirejs": "^2.3.6",
+    "react": "16.6.3",
+    "react-dom": "16.6.3",
+    "requirejs": "2.3.6",
     "sqlite3": "^4.0.4",
-    "web3": "1.0.0-beta.54",
-    "ws": "^6.0.0"
+    "web3": "1.0.0-beta.55",
+    "ws": "^6.2.1"
   },
   "devDependencies": {
-    "eslint": "^5.15.1",
+    "eslint": "^5.16.0",
     "eslint-plugin-html": "^5.0.0",
     "eslint-plugin-ie11": "^1.0.0",
     "mocha": "^6.0.2"

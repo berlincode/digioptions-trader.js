@@ -5,6 +5,7 @@
     define(
       [
         'react',
+        'digioptions-contracts.js',
         'digioptions-tools.js',
         './utils',
         './trader_view'
@@ -15,6 +16,7 @@
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
       require('react'),
+      require('digioptions-contracts.js'),
       require('digioptions-tools.js'),
       require('./utils.js'),
       require('./trader_view.js')
@@ -23,12 +25,13 @@
     // Global (browser)
     root.marketView = factory(
       root.React,
+      root.digioptionsContracts,
       root.digioptionsTools,
       root.utils,
       root.traderView
     );
   }
-})(this, function(React, digioptionsTools, utils, traderView){
+})(this, function(React, digioptionsContracts, digioptionsTools, utils, traderView){
 
   var getDigioptionsUrl = digioptionsTools.dataNetworksUtils.getDigioptionsUrl;
   var getEtherscanUrlContract = digioptionsTools.dataNetworksUtils.getEtherscanUrlContract;
@@ -48,7 +51,7 @@
           React.createElement('span', {className: 'hidden-xs'},
             'type: '
           ),
-          digioptionsTools.typeDurationToString(this.props.marketDefinition.typeDuration) + ' | ',
+          (digioptionsContracts.typeDuration[this.props.marketDefinition.marketBaseData.typeDuration] || '-') + ' | ',
           React.createElement('span', {className: 'hidden-xs'},
             'underlying: '
           ),
@@ -96,11 +99,15 @@
             React.createElement('dd', null,
               'contractAddr: ' + this.props.marketDefinition.contractAddr,
               React.createElement('br', null),
-              'marketFactHash: ' + this.props.marketDefinition.marketFactHash,
+              'marketsAddr: ' + this.props.marketDefinition.marketsAddr,
+              React.createElement('br', null),
+              'marketHash: ' + this.props.marketDefinition.marketHash,
               React.createElement('br', null),
               'strikes: ' + this.props.marketDefinition.marketBaseData.strikesStrings.join(', '),
               React.createElement('br', null),
-              'transactionFee: ' + this.props.marketDefinition.marketBaseData.transactionFeeStringPercent + ' %',
+              'transactionFee0: ' + this.props.marketDefinition.marketBaseData.transactionFeeStringPercent0 + ' %',
+              React.createElement('br', null),
+              'transactionFee1: ' + this.props.marketDefinition.marketBaseData.transactionFeeStringPercent1 + ' %',
               React.createElement('br', null),
               'expiration (epoch seconds): ' + this.props.marketDefinition.marketBaseData.expiration,
               React.createElement('br', null),
@@ -141,9 +148,9 @@
 
     self.render = function(){
 
-      var url_market = getDigioptionsUrl('pageMarket', {network: self.props.marketDefinition.network, marketsAddr: self.props.marketDefinition.contractAddr, marketFactHash: self.props.marketDefinition.marketFactHash});
+      var url_market = getDigioptionsUrl('pageMarket', {network: self.props.marketDefinition.network, contractAddr: self.props.marketDefinition.contractAddr, marketHash: self.props.marketDefinition.marketHash});
       var url_contract = getEtherscanUrlContract(self.props.marketDefinition.network, self.props.marketDefinition.contractAddr);
-      var url_pubsub_viewer = getXmppPubsubViewerUrl(self.props.marketDefinition.network, self.props.marketDefinition.contractAddr, self.props.marketDefinition.marketFactHash);
+      var url_pubsub_viewer = getXmppPubsubViewerUrl(self.props.marketDefinition.network, self.props.marketDefinition.marketsAddr, self.props.marketDefinition.marketHash);
 
       return (
         React.createElement(React.Fragment, null,

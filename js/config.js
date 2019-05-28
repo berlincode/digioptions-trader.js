@@ -4,25 +4,31 @@
     // AMD
     define(
       [
-        'web3'
+        'web3',
+        'digioptions-tools.js',
       ],
       factory
     );
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
-      require('web3')
+      require('web3'),
+      require('digioptions-tools.js'),
     );
   } else {
     // Global (browser)
     root.config = factory(
-      root.web3
+      root.web3,
+      root.digioptionsTools,
     );
   }
-})(this, function(Web3){
+})(this, function(Web3, digioptionsTools){
 
-  // TODO dummy
-  var web3 = new Web3('http://localhost:8545'); // eslint-disable-line  no-unused-vars
+  var web3 = new Web3(); // eslint-disable-line  no-unused-vars
+
+  var contractAddressesDefault = function(dataNetwork){
+    return dataNetwork.contractDescriptions.map(function(x){return x.addr;});
+  };
 
   var config = {
 
@@ -71,6 +77,13 @@
       ]
     },
 
+    contractAddresses: {
+      // a list of contracts which are monitored
+      'main': contractAddressesDefault(digioptionsTools.dataNetworks['main']),
+      'ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ropsten']),
+      'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
+      'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
+    },
 
     /*******************/
     /* Nodejs settings */

@@ -1,13 +1,13 @@
 /*
     //var normalize_order = digioptionsTools.normalize_order;
 
-    utils.call(this.web3, this.marketDefinition.contractAddr, order.contractAddr, 'getLiquidityAndPositions', [this.marketDefinition.marketFactHash, order.offerOwner, false], function(err, result) {
+    utils.call(this.web3, this.marketDefinition.contractAddr, order.contractAddr, 'getLiquidityAndPositions', [this.marketDefinition.marketHash, order.offerOwner, false], function(err, result) {
 
       // TODO check err
       //console.log('toNumber', result);
       var balance = result;
-      //utils.call(web3, this.marketsContract, order.contractAddr, 'getMaxLossAfterTrade', [this.marketFactHash, order.offerOwner, order.optionID, order.size, -order.size*order.price], function(err, result) {
-      utils.call(web3, this.marketDefinition.contractAddr, order.contractAddr, 'getMaxLossAfterTrade', [this.marketDefinition.marketFactHash, order.offerOwner, order.optionID, order.size, -order.size*order.price], function(err, result) {
+      //utils.call(web3, this.marketsContract, order.contractAddr, 'getMaxLossAfterTrade', [this.marketHash, order.offerOwner, order.optionID, order.size, -order.size*order.price], function(err, result) {
+      utils.call(web3, this.marketDefinition.contractAddr, order.contractAddr, 'getMaxLossAfterTrade', [this.marketDefinition.marketHash, order.offerOwner, order.optionID, order.size, -order.size*order.price], function(err, result) {
         //balance = balance + result.toNumber();
         balance = balance + result;
         balance += 1000000;// TODO fake balance
