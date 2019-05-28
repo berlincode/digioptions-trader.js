@@ -27,7 +27,7 @@
   var dbRunning = false;
   var db = null;
   var sizeInBytes = null;
-  var dbUserVersion = 5;
+  var dbUserVersion = 7;
   var jsonTables = {};
   var version;
 
@@ -205,7 +205,10 @@
         'marketDefinition.network',
         'marketDefinition.chainID',
         'marketDefinition.contractAddr',
-        'marketDefinition.marketFactHash',
+        'marketDefinition.marketsAddr',
+        //'marketDefinition.marketListerAddr', // TODO
+        //TODO contract versions
+        'marketDefinition.marketHash',
         'marketDefinition.marketBaseData.baseUnitExp',
         'marketDefinition.marketBaseData.expiration',
         'marketDefinition.marketBaseData.underlying',
@@ -215,9 +218,9 @@
         'marketDefinition.marketBaseData.signerAddr',
         'marketDefinition.marketBaseData.strikesFloat',
         'marketDefinition.marketBaseData.strikesStrings',
-        'marketDefinition.typeDuration'
+        'marketDefinition.marketBaseData.typeDuration'
       ],
-      sqlCreateTableExtra: ', UNIQUE ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash") ON CONFLICT REPLACE'
+      sqlCreateTableExtra: ', UNIQUE ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash") ON CONFLICT REPLACE'
     },
     'trader': { // table name
       jsonColumns: [
@@ -226,7 +229,7 @@
         // keys to reference table market via market's index
         'marketDefinition.network',
         'marketDefinition.contractAddr',
-        'marketDefinition.marketFactHash',
+        'marketDefinition.marketHash',
 
         'traderProps.infoStrings',
         'traderProps.errorStrings',
@@ -240,9 +243,9 @@
   };
 
   var sqlCommandsExtra = [
-    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash");',
-    'CREATE INDEX IF NOT EXISTS MarketIndex ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash", "traderProps.data.dateMs");',
-    'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketFactHash", "traderProps.data.dateMs");'
+    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash");',
+    'CREATE INDEX IF NOT EXISTS MarketIndex ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash", "traderProps.data.dateMs");',
+    'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash", "traderProps.data.dateMs");'
   ];
 
   var insertJson = function(tableName, data){
@@ -387,13 +390,13 @@
   return {
     setup: setup,
     isRunning: isRunning,
-    size: size, 
+    size: size,
     flatten: flatten,
     unflatten: unflatten,
     insertJson: insertJson,
     unflattenFromDictJson: unflattenFromDictJson,
-    get: function(sql, args){return promisify(db, db.get)(sql, args || []);}, 
-    all: function(sql, args){return promisify(db, db.all)(sql, args || []);}, 
+    get: function(sql, args){return promisify(db, db.get)(sql, args || []);},
+    all: function(sql, args){return promisify(db, db.all)(sql, args || []);},
     tableDefinitions: tableDefinitions
   };
 });

@@ -26,9 +26,9 @@
       xmppUrlHttpBind: 'https://mainnet.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],
       xmppPortsHttpBind: [5280],
-      xmppPubsubNodePath: '/v1/mainnet/{marketsAddr}/{marketFactHash}',
+      xmppPubsubNodePath: '/v1/mainnet/{marketsAddr}/{marketHash}',
       xmppJidPassword: ['anon@mainnet.xmpp.digioptions.com', 'password'],
-      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=main&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
+      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=main&marketsAddr={marketsAddr}&marketHash={marketHash}',
       ethProvider: 'wss://mainnet.infura.io/ws', // for WebsocketProvider
       chainId: 0 // TODO
     },
@@ -41,15 +41,15 @@
       etherscanTxUrl: 'https://ropsten.etherscan.io/address/{tx}',
       contractDescriptions: [
         //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
-        {addr: '0x8a9c968c1fdddfc89b816c909d9b0da109261e35', name: 'Test Contract', foreign: false},
+        {addr: '0x4c3f03d739CB32d914E3A6CffCF4d5bB40a2c7cc', name: 'Test Contract', foreign: false},
       ],
       xmppUrlWebsocket: 'wss://ropsten.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://ropsten.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],
       xmppPortsHttpBind: [5280],
-      xmppPubsubNodePath: '/v1/ropsten/{marketsAddr}/{marketFactHash}',
+      xmppPubsubNodePath: '/v1/ropsten/{marketsAddr}/{marketHash}',
       xmppJidPassword: ['anon@ropsten.xmpp.digioptions.com', 'password'],
-      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=ropsten&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
+      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=ropsten&marketsAddr={marketsAddr}&marketHash={marketHash}',
       ethProvider: 'wss://ropsten.infura.io/ws', // for WebsocketProvider
       chainId: 0 // TODO
     },
@@ -65,9 +65,9 @@
       xmppUrlHttpBind: 'https://kovan.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],
       xmppPortsHttpBind: [5280],
-      xmppPubsubNodePath: '/v1/kovan/{marketsAddr}/{marketFactHash}',
+      xmppPubsubNodePath: '/v1/kovan/{marketsAddr}/{marketHash}',
       xmppJidPassword: ['anon@kovan.xmpp.digioptions.com', 'password'],
-      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=kovan&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
+      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=kovan&marketsAddr={marketsAddr}&marketHash={marketHash}',
       ethProvider: 'wss://kovan.infura.io/ws', // for WebsocketProvider
       chainId: 0 // TODO
     },
@@ -84,9 +84,9 @@
       xmppUrlHttpBind: 'https://rinkeby.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],
       xmppPortsHttpBind: [5280],
-      xmppPubsubNodePath: '/v1/rinkeby/{marketsAddr}/{marketFactHash}',
+      xmppPubsubNodePath: '/v1/rinkeby/{marketsAddr}/{marketHash}',
       xmppJidPassword: ['anon@rinkeby.xmpp.digioptions.com', 'password'],
-      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=rinkeby&marketsAddr={marketsAddr}&marketFactHash={marketFactHash}',
+      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=rinkeby&marketsAddr={marketsAddr}&marketHash={marketHash}',
       ethProvider: 'wss://rinkeby.infura.io/ws', // for WebsocketProvider
       chainId: 0 // TODO
     }

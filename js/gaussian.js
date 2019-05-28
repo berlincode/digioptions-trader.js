@@ -88,7 +88,7 @@
     var precision = 1 / this.variance;
     var dprecision = 1 / d.variance;
     return fromPrecisionMean(
-        precision + dprecision, 
+        precision + dprecision,
         precision * this.mean + dprecision * d.mean);
   };
 
@@ -100,7 +100,7 @@
     var precision = 1 / this.variance;
     var dprecision = 1 / d.variance;
     return fromPrecisionMean(
-        precision - dprecision, 
+        precision - dprecision,
         precision * this.mean - dprecision * d.mean);
   };
 

@@ -113,7 +113,7 @@
 
     self.clickMarket = (function(evt) {
       evt.preventDefault();
-      this.props.clickMarket(self.props.network, self.props.marketFactHash);
+      this.props.clickMarket(self.props.network, self.props.marketHash);
     }).bind(self);
 
     self.render = function(){
@@ -156,18 +156,18 @@
     self.child = React.createRef();
     self.state = {
       //seconds: 0,
-      network: null, // TODO use together with marketFactHash
-      //contractAddr: null, // TODO use together with marketFactHash
-      marketFactHash: null
+      network: null, // TODO use together with marketHash
+      //contractAddr: null, // TODO use together with marketHash
+      marketHash: null
     };
 
-    self.clickMarket = (function(network, marketFactHash) {
-      self.setState({network: network,marketFactHash: marketFactHash});
+    self.clickMarket = (function(network, marketHash) {
+      self.setState({network: network, marketHash: marketHash});
       self.child.current.onSetOpen(false); // close sidebar if not docked
     }).bind(self);
 
     self.clickNetwork = (function(network) {
-      self.setState({network: network, marketFactHash: null});
+      self.setState({network: network, marketHash: null});
     }).bind(self);
 
     self.render = function(){
@@ -185,10 +185,10 @@
     
       // ether selected or first one
       var network = (self.state.network !== null)? self.state.network : ((networksSorted.length > 0) && networksSorted[0]);
-      // TODO rename sortedMarketKeys to marketKeysSorted ot marketFactHashesSorted?
+      // TODO rename sortedMarketKeys to marketKeysSorted ot marketHashesSorted?
       
       var dataNetwork = null;
-      var marketFactHashSelected = null;
+      var marketHashSelected = null;
 
       if (! network){
         sidebarContent = React.createElement('div', {}, 'loading...');
@@ -196,7 +196,7 @@
       } else {
 
         dataNetwork = this.props.networks[network];
-        marketFactHashSelected = (self.state.marketFactHash !== null)? self.state.marketFactHash : ((dataNetwork.sortedMarketKeys.length > 0) && dataNetwork.sortedMarketKeys[0]);
+        marketHashSelected = (self.state.marketHash !== null)? self.state.marketHash : ((dataNetwork.sortedMarketKeys.length > 0) && dataNetwork.sortedMarketKeys[0]);
         var dateBlock = dataNetwork.blockHeader && utils.dateFromUTCSeconds(dataNetwork.blockHeader.timestamp);
 
         sidebarContent = (
@@ -247,13 +247,13 @@
               )
             ),
             React.createElement('ul', {className: 'nav nav-pills nav-stacked'},
-              dataNetwork.sortedMarketKeys.map(function (marketFactHash){
+              dataNetwork.sortedMarketKeys.map(function (marketHash){
                 return React.createElement(MarketViewHeadWrapped, {
-                  key: marketFactHash,
+                  key: marketHash,
                   network: network,
-                  marketFactHash: marketFactHash,
-                  marketProps: dataNetwork.marketProps[marketFactHash],
-                  selected: marketFactHash === marketFactHashSelected,
+                  marketHash: marketHash,
+                  marketProps: dataNetwork.marketProps[marketHash],
+                  selected: marketHash === marketHashSelected,
                   clickMarket: self.clickMarket
                 });
               })
@@ -265,9 +265,9 @@
       return (
         React.createElement(LayoutView, {sidebar: sidebarContent, ref: self.child},
           React.createElement('div', {className: 'tab-content clearfix'},
-            marketFactHashSelected &&
-            React.createElement('div', {key: marketFactHashSelected, className: 'panel panel-default tab-pane active'},
-              React.createElement(marketView.MarketViewMain, dataNetwork.marketProps[marketFactHashSelected])
+            marketHashSelected &&
+            React.createElement('div', {key: marketHashSelected, className: 'panel panel-default tab-pane active'},
+              React.createElement(marketView.MarketViewMain, dataNetwork.marketProps[marketHashSelected])
             )
           )
         )

@@ -114,14 +114,14 @@
   };
 
   // push the data to the clients
-  PubSub.prototype.publish = function(data, marketsAddr, marketFactHash)
+  PubSub.prototype.publish = function(data, marketsAddr, marketHash)
   {
     if (data.message === '') return;
 
     var pubsub_node_path = data_networks_utils.getXmppPubsubNodePath(
       this.network,
-      data_networks_utils.normalizeMarketsAddr(marketsAddr),
-      data_networks_utils.normalizeMarketFactHash(marketFactHash)
+      data_networks_utils.normalizeContractAddr(marketsAddr),
+      data_networks_utils.normalizeMarketHash(marketHash)
     );
 
     var entry = Strophe.xmlElement('entry', []);
@@ -295,11 +295,11 @@
     );
   };
 
-  PubSub.prototype.subscribe = function(marketsAddr, marketFactHash){
+  PubSub.prototype.subscribe = function(marketsAddr, marketHash){
     var pubsub_node_path = data_networks_utils.getXmppPubsubNodePath(
       this.network,
-      data_networks_utils.normalizeMarketsAddr(marketsAddr),
-      data_networks_utils.normalizeMarketFactHash(marketFactHash)
+      data_networks_utils.normalizeContractAddr(marketsAddr),
+      data_networks_utils.normalizeMarketHash(marketHash)
     );
     // node already subscribed?
     if (this.nodes_subscribe.indexOf(pubsub_node_path) >= 0)

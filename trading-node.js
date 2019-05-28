@@ -27,10 +27,10 @@ var clientRequirePathMapping = {
   // following is imported from node_modules folder
   'react': 'node_modules/react/umd/react.production.min',
   'ReactDOM': 'node_modules/react-dom/umd/react-dom.production.min',
-  'factsigner': 'node_modules/factsigner/index',
+  'factsigner': 'node_modules/factsigner/js/index',
   'strophe.js': 'node_modules/strophe.js/strophe',
   'digioptions-tools.js': 'node_modules/digioptions-tools.js/js/index',
-  'digioptions-contracts.js': 'node_modules/digioptions-contracts.js/index',
+  'digioptions-contracts.js': 'node_modules/digioptions-contracts.js/js/index',
   'pubsub': 'node_modules/digioptions-tools.js/js/pubsub',
   'offer_normalize': 'node_modules/digioptions-tools.js/js/offer_normalize',
   'data_networks': 'node_modules/digioptions-tools.js/js/data_networks',
@@ -40,8 +40,8 @@ var clientRequirePathMapping = {
   'quote_provider': 'node_modules/digioptions-tools.js/js/quote_provider',
   'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
 
-  'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/digioptions_markets_abi',
-  'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/digioptions_market_lister_abi'
+  'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/js/digioptions_markets_abi',
+  'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/js/digioptions_market_lister_abi'
 };
 
 var clientSetupStr = `

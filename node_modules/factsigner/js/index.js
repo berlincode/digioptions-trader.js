@@ -17,11 +17,11 @@
     );
   }
 }(this, function (Web3) {
-  var web3_utils = new Web3('http://localhost:8545').utils; // TODO
+  var web3 = new Web3();
 
   //function toFloat(bn, baseUnitExp) {
   //  // no flooring/rounding/ceiling - just stripping digits
-  //  var divisor = web3_utils.toBN('10').pow(web3_utils.toBN(baseUnitExp));
+  //  var divisor = web3_utils.toBN('10').pow(web3.utils.toBN(baseUnitExp));
   //  return bn.div(divisor).mul(unitMultiplier).toString();
   //}
   function parseFloatToBn(floatStr, baseUnitExp){
@@ -30,12 +30,12 @@
       numberFractionalDigits = floatStr.length - floatStr.indexOf('.') - 1;
     floatStr = floatStr.replace('.', '');
 
-    return web3_utils.toBN(floatStr).mul(web3_utils.toBN('10').pow(web3_utils.toBN(baseUnitExp-numberFractionalDigits)));
+    return web3.utils.toBN(floatStr).mul(web3.utils.toBN('10').pow(web3.utils.toBN(baseUnitExp-numberFractionalDigits)));
   }
 
   function toUnitString(bn, baseUnitExp, ndigit) {
     // no flooring/rounding/ceiling - just stripping digits
-    var unitDivisor = web3_utils.toBN('10').pow(web3_utils.toBN(baseUnitExp-ndigit));
+    var unitDivisor = web3.utils.toBN('10').pow(web3.utils.toBN(baseUnitExp-ndigit));
     if (ndigit > 0)
     {
       var str = bn.div(unitDivisor).toString();
@@ -49,7 +49,7 @@
       str = Array(+((ndigit + 2 > str.length) && (ndigit + 2 - str.length))).join('0') + str;
       return sign + str.substring(0, str.length-ndigit) + '.' + str.substring(str.length-ndigit);
     }
-    var unitMultiplier = web3_utils.toBN('10').pow(web3_utils.toBN(-ndigit));
+    var unitMultiplier = web3.utils.toBN('10').pow(web3.utils.toBN(-ndigit));
     return bn.div(unitDivisor).mul(unitMultiplier).toString();
   }
   /*
@@ -108,9 +108,9 @@
     var digits = bytes * 2;
     var hex_string;
     if (dec < 0) {
-      hex_string = (web3_utils.toBN(2)).pow(web3_utils.toBN(length)).add(web3_utils.toBN(dec)).toString(16);
+      hex_string = (web3.utils.toBN(2)).pow(web3.utils.toBN(length)).add(web3.utils.toBN(dec)).toString(16);
     } else {
-      hex_string = web3_utils.toBN(dec).toString(16);
+      hex_string = web3.utils.toBN(dec).toString(16);
     }
     if (hex_string.length > bytes)
       throw new Error('number too large');
@@ -121,11 +121,11 @@
 
   var stringToHex = function(str, bytes){
     bytes = bytes || 32;
-    return web3_utils.padRight(web3_utils.utf8ToHex(str), bytes*2);
+    return web3.utils.padRight(web3.utils.utf8ToHex(str), bytes*2);
   };
 
   var hexToString = function(hexStr){
-    return web3_utils.hexToUtf8(hexStr).split('\0').shift();
+    return web3.utils.hexToUtf8(hexStr).split('\0').shift();
   };
 
   var addHexPrefix = function(hexStr){
@@ -141,20 +141,20 @@
     };
   };
 
-  function factHash(marketDict){
-    return web3_utils.soliditySha3(
-      {t: 'uint8', v: marketDict.baseUnitExp},
-      {t: 'bytes32', v: stringToHex(marketDict.name, 32)},
-      {t: 'int8', v: marketDict.ndigit},
-      {t: 'uint32', v: marketDict.objectionPeriod},
-      {t: 'uint64', v: marketDict.settlement}
+  function factHash(factData){
+    return web3.utils.soliditySha3(
+      {t: 'uint8', v: factData.baseUnitExp},
+      {t: 'bytes32', v: factData.underlying},
+      {t: 'int8', v: factData.ndigit},
+      {t: 'uint32', v: factData.objectionPeriod},
+      {t: 'uint40', v: factData.expirationDatetime}
     );
   }
 
   function settlementHash(factHash, valueBn, settlementType) {
-    return web3_utils.soliditySha3(
+    return web3.utils.soliditySha3(
       {t: 'bytes32', v: factHash},
-      {t: 'bytes32', v: web3_utils.padLeft('0x' + valueBn.toString(16), 64)},
+      {t: 'int256', v: valueBn},
       {t: 'uint16', v: settlementType} // type: e.g. final type == 0
     );
   }
@@ -182,7 +182,7 @@
     toFloat: toFloat,
     //toHex: toHex,
     stringToHex: stringToHex,
-    hexToString:hexToString,
+    hexToString: hexToString,
     sign: sign,
     factHash: factHash,
     settlementHash: settlementHash,

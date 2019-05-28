@@ -40,11 +40,11 @@
     return '0x' + value;
   }
 
-  function normalizeMarketsAddr(addr){
+  function normalizeContractAddr(addr){
     return normalizeHexValue(addr, 20);
   }
 
-  function normalizeMarketFactHash(addr){
+  function normalizeMarketHash(addr){
     return normalizeHexValue(addr, 32);
   }
 
@@ -58,24 +58,24 @@
       args: ['network']
     },
     pageMarketList: {
-      baseUrl: '#/{network}/{marketsAddr}/list',
-      args: ['network', 'marketsAddr']
+      baseUrl: '#/{network}/{contractAddr}/list',
+      args: ['network', 'contractAddr']
     },
-    pageMarketListSelected: { // same as 'pageMarketList', but with marketFactHash selected
-      baseUrl: '#/{network}/{marketsAddr}/{marketFactHash}/list',
-      args: ['network', 'marketsAddr', 'marketFactHash']
+    pageMarketListSelected: { // same as 'pageMarketList', but with marketHash selected
+      baseUrl: '#/{network}/{contractAddr}/{marketHash}/list',
+      args: ['network', 'contractAddr', 'marketHash']
     },
     pageHistory: { /* contract deposits and withdrawals */
-      baseUrl: '#/{network}/{marketsAddr}/depositwithdraw',
-      args: ['network', 'marketsAddr']
+      baseUrl: '#/{network}/{contractAddr}/depositwithdraw',
+      args: ['network', 'contractAddr']
     },
     pageMarket: {
-      baseUrl: '#/{network}/{marketsAddr}/{marketFactHash}',
-      args: ['network', 'marketsAddr', 'marketFactHash']
+      baseUrl: '#/{network}/{contractAddr}/{marketHash}',
+      args: ['network', 'contractAddr', 'marketHash']
     },
     pageTransactions: {
-      baseUrl: '#/{network}/{marketsAddr}/{marketFactHash}/transactions',
-      args: ['network', 'marketsAddr', 'marketFactHash']
+      baseUrl: '#/{network}/{contractAddr}/{marketHash}/transactions',
+      args: ['network', 'contractAddr', 'marketHash']
     }//,
     /* static files */
     //pageImprint: {
@@ -90,10 +90,10 @@
     var url = data.baseUrl;
     for (var i=0; i < data.args.length ; i++){
       var argName = data.args[i];
-      if (argName == 'marketsAddr') {
-        url = url.replace('{marketsAddr}', normalizeMarketsAddr(args.marketsAddr));
-      } else if (argName == 'marketFactHash') {
-        url = url.replace('{marketFactHash}', normalizeMarketFactHash(args.marketFactHash));
+      if (argName == 'contractAddr') {
+        url = url.replace('{contractAddr}', normalizeContractAddr(args.contractAddr));
+      } else if (argName == 'marketHash') {
+        url = url.replace('{marketHash}', normalizeMarketHash(args.marketHash));
       } else {
         url = url.replace('{' + argName + '}', args[argName]);
       }
@@ -103,13 +103,13 @@
     return dataNetwork.digioptionsBaseUrl + url;
   }
 
-  function getXmppPubsubViewerUrl(network, marketsAddr, marketFactHash){
+  function getXmppPubsubViewerUrl(network, marketsAddr, marketHash){
     var dataNetwork = dataNetworks[network];
     if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.xmppPubsubViewer) === 'undefined'))
       return null;
     var url = dataNetwork.xmppPubsubViewer.
-      replace('{marketsAddr}', normalizeMarketsAddr(marketsAddr)).
-      replace('{marketFactHash}', normalizeMarketFactHash(marketFactHash));
+      replace('{marketsAddr}', normalizeContractAddr(marketsAddr)).
+      replace('{marketHash}', normalizeMarketHash(marketHash));
     return url;
   }
 
@@ -118,7 +118,7 @@
     if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.etherscanAddressUrl) === 'undefined'))
       return null;
     return dataNetwork.etherscanAddressUrl.
-      replace('{contractAddr}', normalizeMarketsAddr(contractAddr));
+      replace('{contractAddr}', normalizeContractAddr(contractAddr));
   }
 
   function getEtherscanUrlTx(network, tx){
@@ -150,13 +150,13 @@
     return urls;
   }
 
-  function getXmppPubsubNodePath(network, marketsAddr, marketFactHash){
+  function getXmppPubsubNodePath(network, marketsAddr, marketHash){
     var dataNetwork = dataNetworks[network];
     //if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.xmppPubsubNodePath) === 'undefined'))
     //  return null;
     return dataNetwork.xmppPubsubNodePath.
-      replace('{marketsAddr}', normalizeMarketsAddr(marketsAddr)).
-      replace('{marketFactHash}', normalizeMarketFactHash(marketFactHash));
+      replace('{marketsAddr}', normalizeContractAddr(marketsAddr)).
+      replace('{marketHash}', normalizeMarketHash(marketHash));
   }
 
   function getXmppJidPassword(network){
@@ -172,8 +172,8 @@
   }
 
   return {
-    normalizeMarketsAddr: normalizeMarketsAddr,
-    normalizeMarketFactHash: normalizeMarketFactHash,
+    normalizeContractAddr: normalizeContractAddr,
+    normalizeMarketHash: normalizeMarketHash,
     digioptionsUrlNameToData: digioptionsUrlNameToData,
     getDigioptionsUrl: getDigioptionsUrl,
     getXmppPubsubViewerUrl: getXmppPubsubViewerUrl,

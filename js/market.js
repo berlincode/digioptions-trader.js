@@ -127,6 +127,10 @@
     return this.marketDefinition.contractAddr;
   };
 
+  Market.prototype.getMarketsAddr = function(){
+    return this.marketDefinition.marketsAddr;
+  };
+
   Market.prototype.genOrder = function(orders){
     var self = this;
 
@@ -145,14 +149,14 @@
       var order = Object.assign(
         { // use default values if not excplicitly set
           offerOwner: self.account.address,
-          marketsAddr: self.marketDefinition.contractAddr,
-          marketFactHash: self.marketDefinition.marketFactHash
+          marketsAddr: self.marketDefinition.marketsAddr,
+          marketHash: self.marketDefinition.marketHash
         },
         orders[i]
       );
       var orderSigned = digioptionsContracts.signOrder(this.web3, this.account.privateKey, order);
       ordersSigned.push(orderSigned);
-    } 
+    }
     this.offersPublish(ordersSigned);
   };
 
@@ -168,11 +172,12 @@
       data: this.data,
       marketDefinition: this.marketDefinition,
       terminated: this.terminated,
-      contractAddr: this.marketDefinition.contractAddr,
+      contractAddr: this.marketDefinition.contractAddr, // TODO should we really always add these const values?
+      marketsAddr: this.marketDefinition.marketsAddr, // TODO should we really always add these const values?
       counter: this.counter,
       pubsub_message_count: this.pubsub_message_count,
       traderInfo: this.traderInfo,
-      marketFactHash: this.marketDefinition.marketFactHash
+      marketHash: this.marketDefinition.marketHash
     };
   };
 
