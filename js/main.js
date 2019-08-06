@@ -133,7 +133,7 @@
     }
   };
 
-  Monitor.prototype.setupMarket = function(contractAddr, marketsAddr, marketHash){
+  Monitor.prototype.setupMarket = function(marketsAddr, marketHash){
     var self = this;
     var contract = new this.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
 
@@ -171,14 +171,13 @@
         var marketDefinition = { // constant market definition
           network: self.network,
           chainID: self.dataNetwork.chainID,
-          contractAddr: contractAddr,
           marketsAddr: marketsAddr,
           marketHash: marketHash,
           marketBaseData: marketBaseData
         };
 
         //console.log('new market (real trigger)', key);
-        self.markets[key] = new market.Market(
+        var marketNew = new market.Market(
           self.updateUI.bind(self),
           self.web3,
           marketDefinition,
@@ -192,11 +191,15 @@
           },
           self.quoteProvider
         );
-        self.updateUI(); // to show the new market immediately
+        marketNew.setup()
+          .then(function(){
+            self.markets[key] = marketNew;
+            self.updateUI(); // to show the new market immediately
 
-        if (! self.markets[key].isTerminated()){
-          self.pubsub.subscribe(contractAddr, marketHash);
-        }
+            if (! self.markets[key].isTerminated()){
+              self.pubsub.subscribe(marketsAddr, marketHash);
+            }
+          });
       });
 
   };
@@ -207,8 +210,7 @@
 
     config.contractAddresses[self.network].forEach(function (contractAddr){
       var marketsAddr;
-      var contractMarketListerDetails = null;
-      var contractMarketsDetails = null;
+      //var contractMarketListerDetails = null;
 
       // use any contract abi for calling getContractInfo()
       var contract = new self.web3.eth.Contract(
@@ -221,6 +223,7 @@
           //console.log('contractInfo', contractInfo);
 
           //let contractMarketLister = null;
+          /*
           if (contractInfo.contractType === digioptionsContracts.contractType.CONTRACT_DIGIOPTIONSMARKETLISTER){
 
             contractMarketListerDetails = {
@@ -241,6 +244,7 @@
             version: digioptionsContracts.versionFromInt(contractInfo.versionMarkets),
             address: contractInfo.digiOptionsMarketsAddr
           };
+          */
 
           marketsAddr = contractInfo.digiOptionsMarketsAddr;
 
@@ -258,7 +262,7 @@
             var key = marketHash.toLowerCase();
             if (! self.markets[key]){
               //console.log('new market', contractAddr, marketsAddr, marketHash);
-              self.setupMarket(contractAddr, marketsAddr, marketHash);
+              self.setupMarket(marketsAddr, marketHash);
             }
           }
         });

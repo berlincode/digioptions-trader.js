@@ -209,7 +209,13 @@
                 React.createElement('dt', {style: {textAlign: 'left'}}, 'database running:'),
                 React.createElement('dd', null,
                   (this.props.dbIsRunning?
-                    'yes (' + Math.floor(this.props.dbSize/(1024*1024)) + 'MB)'
+                    'yes (' + (
+                      (this.props.dbSize > 3*1024*1024) ?
+                        Math.floor(this.props.dbSize/(1024*1024)) + 'MB'
+                        :
+                        Math.floor(this.props.dbSize/1024) + 'KB'
+                    ) + 
+                    ')'
                     :
                     'no (only available with nodejs)'
                   )
@@ -327,7 +333,7 @@
         dragToggleDistance: 30,
         styles: {
           sidebar: {
-            top: 51, // 50px navbar height + 1 px navbar border-bottom
+            top: 52, // 50px navbar height + 1 px navbar border-bottom
             zIndex: 1600,
             backgroundColor: '#ffffff',
             width: self.state.docked ? '45%' : 400,

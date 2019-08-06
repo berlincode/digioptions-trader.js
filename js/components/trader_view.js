@@ -51,7 +51,7 @@
       //var marketDefinition = this.props.marketDefinition;
 
       var infoStrings = traderProps.infoStrings || ['no infoStrings'];
-      var errorStrings = traderProps.errorStrings;
+      var errorStrings = traderProps.errorStrings || [];
       var dateQuote = traderProps.quote && utils.dateFromUTCSeconds(traderProps.quote[quoteProvider.KeyTimestampMs]/1000);
 
       return (

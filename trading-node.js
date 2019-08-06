@@ -15,33 +15,40 @@ var WebSocketServer = require('ws').Server,
   os = require('os'),
   jwt = require('jsonwebtoken'),
   argv = require('minimist')(process.argv.slice(2)),
-  main = require('./js/main.js'),
-  config = require('./js/config.js'),
   db = require('./js/db.js');
 
 require('digioptions-tools.js/js/strophe_node_polyfills.js');
 
-var clientRequirePathMapping = {
-  'web3': 'js/web3.min',
+var clientRequireConfig = {
+  paths: {
+    'web3': 'js/web3.min',
 
-  // following is imported from node_modules folder
-  'react': 'node_modules/react/umd/react.production.min',
-  'ReactDOM': 'node_modules/react-dom/umd/react-dom.production.min',
-  'factsigner': 'node_modules/factsigner/js/index',
-  'strophe.js': 'node_modules/strophe.js/strophe',
-  'digioptions-tools.js': 'node_modules/digioptions-tools.js/js/index',
-  'digioptions-contracts.js': 'node_modules/digioptions-contracts.js/js/index',
-  'pubsub': 'node_modules/digioptions-tools.js/js/pubsub',
-  'offer_normalize': 'node_modules/digioptions-tools.js/js/offer_normalize',
-  'data_networks': 'node_modules/digioptions-tools.js/js/data_networks',
-  'data_networks_utils': 'node_modules/digioptions-tools.js/js/data_networks_utils',
-  'data_config': 'node_modules/digioptions-tools.js/js/data_config',
-  'xhr-request-promise': 'node_modules/digioptions-tools.js/js/xhr-request-promise',
-  'quote_provider': 'node_modules/digioptions-tools.js/js/quote_provider',
-  'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
+    // following is imported from node_modules folder
+    'react': 'node_modules/react/umd/react.production.min',
+    'ReactDOM': 'node_modules/react-dom/umd/react-dom.production.min',
+    'factsigner': 'node_modules/factsigner/js/index',
+    'strophe.js': 'node_modules/strophe.js/strophe',
+    'digioptions-tools.js': 'node_modules/digioptions-tools.js/js/index',
+    'pubsub': 'node_modules/digioptions-tools.js/js/pubsub',
+    'offer_normalize': 'node_modules/digioptions-tools.js/js/offer_normalize',
+    'data_networks': 'node_modules/digioptions-tools.js/js/data_networks',
+    'data_digioptions': 'node_modules/digioptions-tools.js/js/data_digioptions',
+    'data_networks_utils': 'node_modules/digioptions-tools.js/js/data_networks_utils',
+    'data_config': 'node_modules/digioptions-tools.js/js/data_config',
+    'xhr-request-promise': 'node_modules/digioptions-tools.js/js/xhr-request-promise',
+    'quote_provider': 'node_modules/digioptions-tools.js/js/quote_provider',
+    'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
 
-  'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/js/digioptions_markets_abi',
-  'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/js/digioptions_market_lister_abi'
+    'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/js/digioptions_markets_abi',
+    'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/js/digioptions_market_lister_abi'
+  },
+  packages: [
+    {
+      name: 'digioptions-contracts.js',
+      location: 'node_modules/digioptions-contracts.js',
+      main: 'js/index.js'
+    }
+  ]
 };
 
 var clientSetupStr = `
@@ -159,9 +166,7 @@ if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined'))
   // ending with '.js' like strophe.js
   require.jsExtRegExp = /^\\/|:|\\?/;
   // use 'paths' so that we can use modules directly from node_modules directory
-  require.config({
-    paths: ${JSON.stringify(clientRequirePathMapping)}
-  });
+  require.config(${JSON.stringify(clientRequireConfig)});
 
   ${clientSetupStr}
 }
@@ -203,7 +208,7 @@ var serveStatic = function(pathname, response, httpRoot){
       }
       else {
         response.writeHead(500);
-        response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+        response.end('Sorry, check with the site admin for error: ' + error.code + ' ..\n');
       }
     }
     else {
@@ -257,6 +262,7 @@ class Server {
     var core;
     var sockets = [];
     var that = this;
+    const config = require('./js/config.js');
 
     // validate credentials
     this.requestRouter.route(
@@ -393,6 +399,7 @@ class Server {
     };
 
     // now start all networks
+    const main = require('./js/main.js');
     core = new main.Core(contentUpdated);
     core.start();
   }
@@ -418,7 +425,11 @@ var printInterfaces = function(port, host) {
 };
 
 var setup = function(dbFilename, versionString, httpRoot, clientSetupStr) {
-  return db.setup(dbFilename, versionString)
+  db.basenameSet(dbFilename);
+  db.basedirSet('./');
+  db.versionSet(versionString);
+
+  return db.setup()
     .then(function() {
       var port = argv.port || 8888;
       var host = argv.host || hostDefault;
@@ -432,6 +443,9 @@ var setup = function(dbFilename, versionString, httpRoot, clientSetupStr) {
       server.start();
       printInterfaces(port, host);
       console.log('setup finished. server running.');
+    })
+    .catch(function(err) {
+      console.log('sqlite error (main db):', err.message);
     });
 };
 
@@ -450,7 +464,9 @@ if (require.main === module) {
   //console.log('required as a module');
   module.exports = {
     Server: Server,
-    clientRequirePathMapping: clientRequirePathMapping,
+    clientRequireConfig: clientRequireConfig,
+    RequestRouter: RequestRouter,
+    serveStatic: serveStatic,
     printInterfaces: printInterfaces
   };
 }

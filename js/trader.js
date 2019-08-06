@@ -56,12 +56,14 @@
   var underlyingToVolatility = {
     // volatility per year - Please adjust!
     'ETH/USDT': 0.31,
-    'BTC/USDT': 0.31
+    'BTC/USDT': 0.31,
+    'XRP/USDT': 0.31
   };
 
   var Trader = function(
     marketDefinition
   ){
+    //var self = this;
     this.marketDefinition = marketDefinition;
 
     //console.log(underlyingString, strikes);
@@ -78,9 +80,49 @@
     this.infoStrings = [];
     this.errorStrings = [];
 
-    db.insertJson('market', {
-      marketDefinition: marketDefinition
-    });
+    this.marketID = null; // database unique index
+    this.dbname = null;
+  };
+
+  Trader.prototype.setup = function(){ // returns Promise
+    var self = this;
+    var dbname = db.uniqueNameGet();
+
+    if (! db.isRunning())
+      return Promise.resolve();
+
+    return db.dbTables['market'].insertOrIgnore('main', {marketDefinition: self.marketDefinition})
+      .then(function(){
+        // TODO move
+        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.marketDefinition.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + self.marketDefinition.marketBaseData.underlying + '-' + self.marketDefinition.marketBaseData.typeDuration + '-trader.db';
+        console.log('filename:', filename);
+
+        return db.run('attach database "' + filename + '" as ' + dbname + ';'); // TODO escape?
+      })
+      .then(function(){
+        return db.setupSchema(dbname); // TODO
+      })
+      .then(function(){
+        return db.dbTables['market'].insertOrIgnore(dbname, {marketDefinition: self.marketDefinition});
+      })
+      .then(function(){
+        return db.get(
+          'SELECT marketID from ' + db.quote(dbname, 'market') + ' WHERE "marketDefinition_network"=(?) and "marketDefinition_marketsAddr"=(?) and "marketDefinition_marketHash"=(?);',
+          [
+            self.marketDefinition.network,
+            self.marketDefinition.marketsAddr,
+            self.marketDefinition.marketHash
+          ]
+        );
+      })
+      .then(function(result){
+        //console.log('marketID', result);
+	// finally set self.dbname and self.marketID
+        self.marketID = result.marketID; 
+        self.dbname = dbname;
+      }).catch(function(err){
+        console.log('db error (' + dbname + '):', err);
+      });
   };
 
   Trader.prototype.stateToProps = function(){
@@ -98,6 +140,7 @@
   };
 
   Trader.prototype.exec = function(/*blockHeader*/){
+    // TODO callback if finished
     //var self = this;
 
     var infoStrings = [];
@@ -119,9 +162,7 @@
     if (secondsUntilExpiration < 60) {
       infoStrings.push('market is expiring');
       this.infoStrings = infoStrings;
-      return {
-        orders: []
-      };
+      return; // TODO no insert
     }
 
     var optionIDToProbability = calcOptionIDToProbability(
@@ -147,20 +188,19 @@
     this.infoStrings = infoStrings;
     this.errorStrings = errorStrings;
 
-    db.insertJson('trader', {
-      // add keys to reference table market via market's index
-      marketDefinition: {
-        network: this.marketDefinition.network,
-        contractAddr: this.marketDefinition.contractAddr,
-        marketHash: this.marketDefinition.marketHash
-      },
-      // log everything that is required to render TraderView()
-      traderProps: this.stateToProps()
-    });
+    if ((! db.isRunning()) || (! this.dbname))
+      return;
 
-    return {
-      orders: []
-    };
+    db.dbTables['trader'].insertOrIgnore(
+      this.dbname,
+      {
+        marketID: this.marketID, // database unique index
+        // log everything that is required to render TraderView()
+        traderProps: this.stateToProps()
+      }
+    ).catch(function(/*err*/){
+      // ignore
+    });
   };
 
   return {

@@ -12,27 +12,32 @@
     define(
       [
         './data_networks',
+        './data_digioptions',
       ], function (
-        data_networks
+        data_networks,
+        data_digioptions
       ) {
         return factory(
-          data_networks
+          data_networks,
+          data_digioptions
         );
       });
 
   } else if ( typeof module != 'undefined' && module.exports ) {
     // Node and other environments that support module.exports
     module.exports = factory(
-      require('./data_networks')
+      require('./data_networks'),
+      require('./data_digioptions')
     );
 
   } else {
     // Browser
     global.data_networks_utils = factory(
-      global.data_networks
+      global.data_networks,
+      global.data_digioptions
     );
   }
-})(this, function(dataNetworks){
+})(this, function(dataNetworks, dataDigioptions){
 
   function normalizeHexValue(value, bytes){
     value = value.replace(/^0x/, '').toLowerCase();
@@ -48,45 +53,9 @@
     return normalizeHexValue(addr, 32);
   }
 
-  var digioptionsUrlNameToData = {
-    pageStart: {
-      baseUrl: '#',
-      args: []
-    },
-    pageNetwork: {
-      baseUrl: '#/{network}',
-      args: ['network']
-    },
-    pageMarketList: {
-      baseUrl: '#/{network}/{contractAddr}/list',
-      args: ['network', 'contractAddr']
-    },
-    pageMarketListSelected: { // same as 'pageMarketList', but with marketHash selected
-      baseUrl: '#/{network}/{contractAddr}/{marketHash}/list',
-      args: ['network', 'contractAddr', 'marketHash']
-    },
-    pageHistory: { /* contract deposits and withdrawals */
-      baseUrl: '#/{network}/{contractAddr}/depositwithdraw',
-      args: ['network', 'contractAddr']
-    },
-    pageMarket: {
-      baseUrl: '#/{network}/{contractAddr}/{marketHash}',
-      args: ['network', 'contractAddr', 'marketHash']
-    },
-    pageTransactions: {
-      baseUrl: '#/{network}/{contractAddr}/{marketHash}/transactions',
-      args: ['network', 'contractAddr', 'marketHash']
-    }//,
-    /* static files */
-    //pageImprint: {
-    //  baseUrl: 'imprint.html',
-    //  args: []
-    //}
-  };
-
   function getDigioptionsUrl(urlName, args, relativeUrl){
     var dataNetwork = dataNetworks[args.network]; // valid argument network is always required
-    var data = digioptionsUrlNameToData[urlName];
+    var data = dataDigioptions[urlName];
     var url = data.baseUrl;
     for (var i=0; i < data.args.length ; i++){
       var argName = data.args[i];
@@ -174,7 +143,7 @@
   return {
     normalizeContractAddr: normalizeContractAddr,
     normalizeMarketHash: normalizeMarketHash,
-    digioptionsUrlNameToData: digioptionsUrlNameToData,
+    digioptionsUrlNameToData: dataDigioptions,
     getDigioptionsUrl: getDigioptionsUrl,
     getXmppPubsubViewerUrl: getXmppPubsubViewerUrl,
     getEtherscanUrlContract: getEtherscanUrlContract,

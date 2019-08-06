@@ -53,7 +53,8 @@
 
   var symbolMapBitfinex = {
     'BTC/USDT': 'tBTCUSD',
-    'ETH/USDT': 'tETHUSD'
+    'ETH/USDT': 'tETHUSD',
+    'XRP/USDT': 'tXRPUSD'
   };
 
   function BitfinexProvider(realtimeCallback){
@@ -194,10 +195,21 @@
         return request(urlHist, {method: 'GET'});
       })
       .then(function(response) {
+        // response might be something like (at least with the proxy)
+        //{"code": 503, "error": "temporarily_unavailable", "error_description": "Sorry, the service is temporarily unavailable. See https://www.bitfinex.com/ for more info."}
+//console.log('resp', response);
         var resp = JSON.parse(response);
-        historyCallback(resp);
+        if (Array.isArray(resp)){
+          // ok
+          historyCallback(null /* err */, resp);
+        } else {
+          // error
+//console.log('res', resp);
+          historyCallback(resp, null);
+        }
       })
       .catch(function(error){
+//          historyCallback(resp);
         console.log('quote_provider loadHistory', error); // TODO handle
       });
   };
@@ -266,10 +278,10 @@
       this.realtimeCallback(symbol, resp);
   };
 
-  QuoteProvider.prototype.history = function(resp)
+  QuoteProvider.prototype.history = function(err, resp)
   {
     if (this.historyCallback)
-      this.historyCallback(this.symbol, resp);
+      this.historyCallback(err, resp);
   };
 
   QuoteProvider.prototype.close = function()

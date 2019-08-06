@@ -84,20 +84,23 @@
     this.traderInfo = null;
 
     this.account = web3.eth.accounts.wallet.accounts[0]; // default is to take the first account
+  }
+
+  Market.prototype.setup = function(){ // returns Promise
     var self = this;
 
     // check if market should be started at all?
     if (this.expired){
       this.traderInfo = 'not started (already expired)';
       this.terminated = true;
-      return;
+      return Promise.resolve();
     }
 
     var providerData = digioptionsTools.quoteProvider.getProviderDataFromSymbol(this.marketDefinition.marketBaseData.underlyingString);
     if (!providerData){
       this.traderInfo = 'not started: no quotes available for ' + this.marketDefinition.marketBaseData.underlyingString;
       this.terminated = true;
-      return;
+      return Promise.resolve();
     }
     self.quoteProvider.setup(providerData);
 
@@ -107,13 +110,17 @@
         this.genOrder.bind(this)
       );
     }catch(err) {
+      console.log('Trader not started:', err);
       this.traderInfo = 'not started: ' + err;
       this.terminated = true;
-      return;
+      return Promise.resolve();
     }
 
-    this.updateBlock(this.blockHeaderInitial);
-  }
+    return this.trader.setup()
+      .then(function(){
+        self.updateBlock(self.blockHeaderInitial);
+      });
+  };
 
   Market.prototype.getExpiration = function(){
     return this.marketDefinition.marketBaseData.expiration;
@@ -121,10 +128,6 @@
 
   Market.prototype.getUnderlyingString = function(){
     return this.marketDefinition.marketBaseData.underlyingString;
-  };
-
-  Market.prototype.getContractAddr = function(){
-    return this.marketDefinition.contractAddr;
   };
 
   Market.prototype.getMarketsAddr = function(){
@@ -172,8 +175,7 @@
       data: this.data,
       marketDefinition: this.marketDefinition,
       terminated: this.terminated,
-      contractAddr: this.marketDefinition.contractAddr, // TODO should we really always add these const values?
-      marketsAddr: this.marketDefinition.marketsAddr, // TODO should we really always add these const values?
+      marketsAddr: this.marketDefinition.marketsAddr,
       counter: this.counter,
       pubsub_message_count: this.pubsub_message_count,
       traderInfo: this.traderInfo,
