@@ -25,14 +25,16 @@
 })(this, function(sqlite3){
 
   var dbRunning = false;
+  var basename = 'trader';
+  var basedir = './';
   var db = null;
   var sizeInBytes = null;
-  var dbUserVersion = 7;
-  var jsonTables = {};
+  var dbUserVersion = 9;
+  var uniqueID = 0;
+  var dbTables = {};
   var version;
 
   var warnUnknownKeys = true;
-  //var warnUnknownKeys = false;
 
   /* promise helper functions */
   var slice = Function.call.bind(Array.prototype.slice);
@@ -56,6 +58,23 @@
     return promisified;
   };
 
+  var get = function(sql, args){return promisify(db, db.get)(sql, args || []);};
+  var all = function(sql, args){return promisify(db, db.all)(sql, args || []);};
+  var run = function(sql, args){return promisify(db, db.run)(sql, args || []);};
+
+  var validRegExp = new RegExp('^[a-zA-Z0-9_]+$');
+  var quote = function(){
+    // a very simple function for constructing SQL statements
+    // all arguments are joined (using '.')
+    for (var i = 0, j = arguments.length; i < j; i++){
+      if (! validRegExp.test(arguments[i])) {
+        throw 'invalid character in str "' + arguments[i] + '"';
+      }
+    }
+    var args = Array.prototype.slice.call(arguments);
+    return args.map(function(name){return '"' + name + '"';}).join('.');
+  };
+
   /* helper functions to flatten/unflatten hierarchical data structures */
   var unflatten = function(data) {
     if (Object(data) !== data || Array.isArray(data))
@@ -64,7 +83,7 @@
     for(var p in data) {
       cur = result, prop = '', last = 0;
       do {
-        idx = p.indexOf('.', last);
+        idx = p.indexOf('_', last);
         temp = p.substring(last, idx !== -1 ? idx : undefined);
         cur = cur[prop] || (cur[prop] = (!isNaN(parseInt(temp)) ? [] : {}));
         prop = temp;
@@ -93,7 +112,7 @@
         var isEmpty = true;
         for (var p in cur) {
           isEmpty = false;
-          recurse(cur[p], prop ? prop+'.'+p : p);
+          recurse(cur[p], prop ? prop + '_' + p : p);
         }
         if (isEmpty)
           result[prop] = {};
@@ -119,59 +138,95 @@
     });
   };
 
-  var quoteColumnName = function(columnName){
-    return '"' + columnName + '"'; // simple hack for now
+  var isDatatypeJson = function(columnDatatype){
+    return (columnDatatype === 'json'); // TODO indexof
   };
 
-  var JsonTable = function(
+  var DBTable = function(
     tableName,
-    jsonColumnsArray,
+    columns,
     sqlCreateTableExtra
   ){
     this.tableName = tableName;
-    this.jsonColumnsArray = jsonColumnsArray;
+    this.columns = columns;
     this.sqlCreateTableExtra = sqlCreateTableExtra || '';
-    this.jsonColumnsSet = jsonColumnsArray.reduce(function(map, columnName) {
-      map[columnName] = true;
+    this.columnType = columns.reduce(function(map, column) {
+      map[column.name] = column.datatype;
       return map;
     }, {});
+    this.warnedKeys = {};
   };
 
-  JsonTable.prototype.create = function(db){
-    return promisify(db, db.run)(
-      'CREATE TABLE IF NOT EXISTS '+ this.tableName + ' (' +
-      (this.jsonColumnsArray.map(function(columnName){return quoteColumnName(columnName) + ' json';}).join(', ')) +
+  DBTable.prototype.create = function(dbname){
+    return run(
+      'CREATE TABLE IF NOT EXISTS ' + quote(dbname, this.tableName) + ' (' +
+      (this.columns.map(function(column){return quote(column.name) + ' ' + column.datatype;}).join(', ')) +
       this.sqlCreateTableExtra +
       ');'
     );
   };
 
-  JsonTable.prototype.insert = function(db, dataDict){
+  DBTable.prototype.insert = function(dbname, dataDict, command){
+
+    command = command || 'INSERT';
+
+    if (this.columnType.version && version) {
+      // if table has a version column we automatically set a default
+      dataDict = Object.assign(
+        {
+          // set a version default so that we may log the version too
+          version: version
+        },
+        dataDict
+      );
+    }
+
     var dataDictFlattend = flatten(dataDict);
     if (warnUnknownKeys){
       for (var key in dataDictFlattend) {
-        if (!(this.jsonColumnsSet[key])){
+        if ((!(this.columnType[key])) && (!this.warnedKeys[key])){
           console.log('Warning: not storing key to database:', key);
+          this.warnedKeys[key] = true; // remember this key and do not print warning again
         }
       }
     }
+
+    // used columns
+    var columns = this.columns.filter(function(col){return col.name in dataDictFlattend;});
+
     var sql = (
-      'INSERT OR REPLACE INTO ' + this.tableName +' (' +
-      (this.jsonColumnsArray.map(function(columnName){return quoteColumnName(columnName);}).join(', ')) +
+      command + ' INTO ' + quote(dbname, this.tableName) + ' (' + // this does not change primary key marketID
+      (columns.map(function(column){return quote(column.name);}).join(', ')) +
       ') VALUES (' +
-      (this.jsonColumnsArray.map(function(){return 'json(?)';}).join(', ')) +
+      (columns.map(function(column){return isDatatypeJson(column.datatype)? 'json(?)' : '(?)';}).join(', ')) +
       ')'
     );
-    return promisify(db, db.run).apply(
-      null,
-      [
-        sql
-      ].concat(this.jsonColumnsArray.map(function(column){return JSON.stringify(dataDictFlattend[column]);}))
-    );
+
+    var values = columns.map(function(column){return isDatatypeJson(column.datatype)? JSON.stringify(dataDictFlattend[column.name]) : dataDictFlattend[column.name];});
+    return run(sql, values);
   };
 
-  JsonTable.prototype.addColumn = function(db, columnName, ignoreExistsError){
-    return promisify(db, db.run)('ALTER TABLE ' + this.tableName + ' ADD COLUMN ' + quoteColumnName(columnName) + ' json;')
+  DBTable.prototype.insertOrIgnore = function(dbname, dataDict){
+    return this.insert(dbname, dataDict, 'INSERT OR IGNORE');
+  };
+
+  DBTable.prototype.insertOrReplace = function(dbname, dataDict){
+    return this.insert(dbname, dataDict, 'INSERT OR REPLACE');
+  };
+
+  //  DBTable.prototype.insertOrUpdate = function(dbname, dataDict){
+  //    return (
+  //      this.insert(dbname, dataDict, 'INSERT OR REPLACE')
+  //      .then(function(){
+  //        return );
+  //      this.insert(dbname, dataDict, 'INSERT OR REPLACE')
+  //    );
+  //  };
+  //'INSERT OR REPLACE INTO '
+  //'INSERT OR IGNORE'
+
+  DBTable.prototype.addColumn = function(dbname, column, ignoreExistsError){
+    return run('ALTER TABLE ' + quote(dbname, this.tableName) + ' ADD COLUMN ' + quote(column.name) + ' ' + column.datatype + ';')
       .catch(function(error) {
         if(
           ignoreExistsError &&
@@ -183,103 +238,150 @@
       });
   };
 
-  JsonTable.prototype.addColumns = function(db, columnNames, ignoreExistsError){
+  DBTable.prototype.addColumns = function(dbname, columns, ignoreExistsError){
     var self = this;
-    return columnNames.reduce(function(previousPromise, nextID) {
+    return columns.reduce(function(previousPromise, nextID) {
       return previousPromise.then(function() {
-        return self.addColumn(db, nextID, ignoreExistsError);
+        return self.addColumn(dbname, nextID, ignoreExistsError);
       });
     }, Promise.resolve());
   };
 
-  JsonTable.prototype.addAllJsonColumns = function(db){
+  DBTable.prototype.addAllJsonColumns = function(dbname){
     var ignoreExistsError = true;
-    return this.addColumns(db, this.jsonColumnsArray, ignoreExistsError);
+    return this.addColumns(dbname, this.columns, ignoreExistsError);
+  };
+
+  DBTable.prototype.unflattenFromDict = function(rowDict){
+    var self = this;
+    var row = {};
+    Object.keys(rowDict).forEach(function(name){row[name] = isDatatypeJson(self.columnType[name])? JSON.parse(rowDict[name]) : rowDict[name];});
+    return unflatten(row);
   };
 
   var tableDefinitions = {
     'market': { // table name
-      jsonColumns: [
-        'version',
+      jsonColumns: [ // TODO rename
+        //{'name': 'marketID', 'datatype': 'integer PRIMARY KEY AUTOINCREMENT'},
+        {'name': 'marketID', 'datatype': 'integer PRIMARY KEY'},
 
-        'marketDefinition.network',
-        'marketDefinition.chainID',
-        'marketDefinition.contractAddr',
-        'marketDefinition.marketsAddr',
-        //'marketDefinition.marketListerAddr', // TODO
+        {'name': 'marketDefinition_network', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketsAddr', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketHash', 'datatype': 'string'},
+
+        {'name': 'version', 'datatype': 'string'},
+        //{'name': 'marketDefinition_marketHash', 'datatype': 'string CHECK (typeof("marketDefinition_marketHash") = "string")'},
+
+        //{'name': 'marketDefinition_marketListerAddr', 'datatype': 'json'}, // TODO
         //TODO contract versions
-        'marketDefinition.marketHash',
-        'marketDefinition.marketBaseData.baseUnitExp',
-        'marketDefinition.marketBaseData.expiration',
-        'marketDefinition.marketBaseData.underlying',
-        'marketDefinition.marketBaseData.underlyingString',
-        'marketDefinition.marketBaseData.transactionFeeStringPercent',
-        'marketDefinition.marketBaseData.ndigit',
-        'marketDefinition.marketBaseData.signerAddr',
-        'marketDefinition.marketBaseData.strikesFloat',
-        'marketDefinition.marketBaseData.strikesStrings',
-        'marketDefinition.marketBaseData.typeDuration'
+        {'name': 'marketDefinition_chainID', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") in ("integer", "null"))'}, // TODO remove NULL if chainIDs were added
+        {'name': 'marketDefinition_marketBaseData_baseUnitExp', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") = "integer")'},
+        {'name': 'marketDefinition_marketBaseData_expiration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_expiration") = "integer")'},
+        {'name': 'marketDefinition_marketBaseData_underlying', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_underlyingString', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_transactionFee0StringPercent', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_transactionFee1StringPercent', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_ndigit', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_ndigit") = "integer")'},
+        {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json'},
+        {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json'},
+        {'name': 'marketDefinition_marketBaseData_typeDuration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_typeDuration") = "integer")'}
       ],
-      sqlCreateTableExtra: ', UNIQUE ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash") ON CONFLICT REPLACE'
+      sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
     },
     'trader': { // table name
       jsonColumns: [
-        'version',
+        {'name': 'marketID', 'datatype': 'integer'}, // foreign key
 
-        // keys to reference table market via market's index
-        'marketDefinition.network',
-        'marketDefinition.contractAddr',
-        'marketDefinition.marketHash',
+        {'name': 'version', 'datatype': 'string'},
 
-        'traderProps.infoStrings',
-        'traderProps.errorStrings',
-        'traderProps.data.dateMs',
-        'traderProps.data.volatility'
+        {'name': 'traderProps_quote_timestampMs', 'datatype': 'integer'},
+        {'name': 'traderProps_quote_value', 'datatype': 'real'},
+
+        {'name': 'traderProps_infoStrings', 'datatype': 'json'},
+        {'name': 'traderProps_errorStrings', 'datatype': 'json'},
+        {'name': 'traderProps_data_dateMs', 'datatype': 'integer'},
+        {'name': 'traderProps_data_volatility' , 'datatype': 'real'}
+
         // add here your custom data columns
-        //'traderProps.<your-data>'
       ],
-      sqlCreateTableExtra: ''
+      sqlCreateTableExtra: ', CONSTRAINT marketID FOREIGN KEY (marketID) REFERENCES markets(marketID) ON UPDATE cascade ON DELETE cascade'
     }
   };
 
   var sqlCommandsExtra = [
-    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash");',
-    'CREATE INDEX IF NOT EXISTS MarketIndex ON market ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash", "traderProps.data.dateMs");',
-    'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketDefinition.network", "marketDefinition.contractAddr", "marketDefinition.marketHash", "traderProps.data.dateMs");'
+    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash");',
+    'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketID", "traderProps_data_dateMs");'
   ];
 
-  var insertJson = function(tableName, data){
-    // only insert of database is running (otherwise silently return)
-    if (jsonTables[tableName] && dbRunning){
-      //console.log('insert');
-      return jsonTables[tableName].insert(
-        db,
-        Object.assign(
-          {
-            // set a version default so that we may log the version too
-            version: version
-          },
-          data
-        )
-      );
-    }
-  };
-
   var updateSize = function(){
-    promisify(db, db.get)('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
+    get('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
       .then(function(result){
         sizeInBytes = result.size;
       });
   };
 
-  var setup = function(filename, ver){
+  var setupSchema = function(dbname){
+    // check user_version
+    return get('PRAGMA ' + dbname + '.user_version;')
+      .then(function(dict) {
+        if (dict.user_version === dbUserVersion)
+          return Promise.resolve();
+
+        console.log('Need to setup/reset database');
+        var commands = [
+          // drop all tables / indexes / triggers
+//          'PRAGMA ' + dbname + '.writable_schema = 1;',
+//          'DELETE FROM ' + dbname + '.sqlite_master WHERE type IN ("table", "index", "trigger");',
+//          'PRAGMA ' + dbname + '.writable_schema = 0;',
+          // free space
+          //'VACUUM ' + dbname + ';',
+          // update user_version (as last thing)
+          'PRAGMA ' + dbname + '.user_version = ' + dbUserVersion + ';'
+        ];
+        return commands.reduce(function(previousPromise, sql) {
+          return previousPromise.then(function() {
+            return run(sql);
+          });
+        }, Promise.resolve());
+      })
+      .then(function() {
+        // create all tables
+        return Object.values(dbTables).reduce(function(previousPromise, table) {
+          return previousPromise.then(function() {
+            // create table and add to add columns if already exists
+            return table.create(dbname)
+              .then(function() {
+                return table.addAllJsonColumns(dbname);
+              });
+          });
+        }, Promise.resolve());
+      })
+      .then(function() {
+        // execute all sqlCommandsExtra
+        return sqlCommandsExtra.reduce(function(previousPromise, sql) {
+          return previousPromise.then(function() {
+            return run(sql);
+          });
+        }, Promise.resolve());
+      })
+      .then(function() {
+        console.log('database setup successful: ' + dbname);
+        dbRunning = true;
+        updateSize();
+        setInterval(updateSize, 60*1000);
+      });
+
+  };
+
+
+  var setup = function(mode /*optional*/){
+    var filename = basedir + '/' + basename;
     console.log('try to setup database:', filename);
 
-    version = ver;
-
-    // create JsonTable instances
+    // create DBTable instances
     for (var tableName in tableDefinitions){
-      jsonTables[tableName] = new JsonTable(
+      dbTables[tableName] = new DBTable(
         tableName,
         tableDefinitions[tableName].jsonColumns,
         tableDefinitions[tableName].sqlCreateTableExtra
@@ -304,71 +406,18 @@
     };
     process.on('SIGTERM', closeDbAndExit);
     process.on('SIGINT', closeDbAndExit);
-
     return createAsync(
       filename,
-      sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
+      mode || (sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE)
     )
       .then(function(db_) {
         db = db_;
         // check for json capabilities
-        return promisify(db, db.get)('SELECT json(?)', JSON.stringify({ok:true}));
+        return get('SELECT json(?)', JSON.stringify({ok:true}));
       })
-
-      .then(function() {
-        // check user_version
-        return promisify(db, db.get)('PRAGMA user_version;');
-      })
-      .then(function(dict) {
-        if (dict.user_version === dbUserVersion)
-          return Promise.resolve();
-
-        console.log('Need to reset database');
-        var commands = [
-          // update user_version
-          'PRAGMA user_version = ' + dbUserVersion + ';',
-          // drop all tables / indexes / triggers
-          'PRAGMA writable_schema = 1;',
-          'DELETE FROM sqlite_master WHERE type IN ("table", "index", "trigger");',
-          'PRAGMA writable_schema = 0;',
-          // free space
-          'VACUUM;'
-        ];
-        return commands.reduce(function(previousPromise, sql) {
-          return previousPromise.then(function() {
-            return promisify(db, db.run)(sql);
-          });
-        }, Promise.resolve());
-      })
-      .then(function() {
-        // create all tables
-        return Object.values(jsonTables).reduce(function(previousPromise, jsonTable) {
-          return previousPromise.then(function() {
-            // create table and add to add columns if already exists
-            return jsonTable.create(db)
-              .then(function() {
-                return jsonTable.addAllJsonColumns(db);
-              });
-          });
-        }, Promise.resolve());
-      })
-      .then(function() {
-        // execute all sqlCommandsExtra
-        return sqlCommandsExtra.reduce(function(previousPromise, sql) {
-          return previousPromise.then(function() {
-            return promisify(db, db.run)(sql);
-          });
-        }, Promise.resolve());
-      })
-      .then(function() {
-        console.log('database setup successful');
-        dbRunning = true;
-        updateSize();
-      })
-      .catch(function(err) {
-        console.log('sqlite error:', err.message);
+      .then(function(){
+        return setupSchema('main');
       });
-
   };
 
   //console.log(JSON.stringify(1.0));
@@ -377,26 +426,36 @@
     return dbRunning;
   };
 
+  var getHandle = function(){
+    return db;
+  };
+
   var size = function(){
     return sizeInBytes;
   };
 
-  var unflattenFromDictJson = function(rowJson){
-    var row = {};
-    Object.keys(rowJson).forEach(function(key){row[key] = JSON.parse(rowJson[key]);});
-    return unflatten(row);
-  };
-
   return {
     setup: setup,
+    createAsync: createAsync,
+    promisify: promisify,
+    setupSchema: setupSchema,
+    basenameSet: function(name){basename=name;},
+    basenameGet: function(){return basename;},
+    basedirSet: function(dir){basedir=dir;},
+    basedirGet: function(){return basedir;},
+    versionSet: function(ver){version=ver;},
+    versionGet: function(){return version;},
+    uniqueNameGet: function(){return 'db' + uniqueID++;},
+    getHandle: getHandle, // db handle
     isRunning: isRunning,
     size: size,
     flatten: flatten,
     unflatten: unflatten,
-    insertJson: insertJson,
-    unflattenFromDictJson: unflattenFromDictJson,
-    get: function(sql, args){return promisify(db, db.get)(sql, args || []);},
-    all: function(sql, args){return promisify(db, db.all)(sql, args || []);},
+    dbTables: dbTables,
+    get: get,
+    all: all,
+    run: run,
+    quote: quote,
     tableDefinitions: tableDefinitions
   };
 });

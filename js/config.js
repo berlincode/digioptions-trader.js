@@ -5,7 +5,7 @@
     define(
       [
         'web3',
-        'digioptions-tools.js',
+        'digioptions-tools.js'
       ],
       factory
     );
@@ -13,13 +13,13 @@
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
       require('web3'),
-      require('digioptions-tools.js'),
+      require('digioptions-tools.js')
     );
   } else {
     // Global (browser)
     root.config = factory(
       root.web3,
-      root.digioptionsTools,
+      root.digioptionsTools
     );
   }
 })(this, function(Web3, digioptionsTools){

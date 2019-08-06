@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -9,7 +9,7 @@
     "email": "elastic.code@gmail.com"
   },
   "scripts": {
-    "eslint": "eslint . ./js/ ./*.html",
+    "eslint": "eslint ./js/ ./*.html",
     "postinstall": "patch-package"
   },
   "files": [
@@ -51,17 +51,17 @@
     "factsigner": "git+https://github.com/berlincode/factsigner.git",
     "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
-    "patch-package": "6.0.5",
+    "patch-package": "6.1.2",
     "react": "16.6.3",
     "react-dom": "16.6.3",
     "requirejs": "2.3.6",
     "sqlite3": "^4.0.4",
-    "web3": "1.0.0-beta.55",
-    "ws": "^6.2.1"
+    "web3": "2.0.0-alpha",
+    "ws": "^7.0.0"
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-plugin-html": "^5.0.0",
+    "eslint": "^6.1.0",
+    "eslint-plugin-html": "^6.0.0",
     "eslint-plugin-ie11": "^1.0.0",
     "mocha": "^6.0.2"
   },
