@@ -56,14 +56,14 @@
     "react-dom": "16.6.3",
     "requirejs": "2.3.6",
     "sqlite3": "^4.0.4",
-    "web3": "2.0.0-alpha",
+    "web3": "2.0.0-alpha.1",
     "ws": "^7.0.0"
   },
   "devDependencies": {
     "eslint": "^6.1.0",
     "eslint-plugin-html": "^6.0.0",
     "eslint-plugin-ie11": "^1.0.0",
-    "mocha": "^6.0.2"
+    "mocha": "^6.2.0"
   },
   "engine": {
     "node": "10.6.0"
