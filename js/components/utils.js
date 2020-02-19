@@ -18,11 +18,11 @@
   }
 })(this, function(){
 
-  var dateFromUTCSeconds = function(epochSeconds){
+  function dateFromUTCSeconds(epochSeconds){
     var date = new Date(0); // The 0 is the key, which sets the date to the epoch
     date.setUTCSeconds(epochSeconds);
     return date;
-  };
+  }
 
   return {
     dateFromUTCSeconds: dateFromUTCSeconds

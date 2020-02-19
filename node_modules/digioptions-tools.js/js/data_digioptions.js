@@ -25,11 +25,13 @@
       baseUrl: '#/{network}/{contractAddr}/list',
       args: ['network', 'contractAddr']
     },
-    pageMarketListSelected: { // same as 'pageMarketList', but with marketHash selected
+    pageMarketListSelected: {
+      // same as 'pageMarketList', but with marketHash selected
       baseUrl: '#/{network}/{contractAddr}/{marketHash}/list',
       args: ['network', 'contractAddr', 'marketHash']
     },
-    pageHistory: { /* contract deposits and withdrawals */
+    pageHistory: {
+      /* contract deposits and withdrawals */
       baseUrl: '#/{network}/{contractAddr}/depositwithdraw',
       args: ['network', 'contractAddr']
     },
@@ -40,11 +42,10 @@
     pageTransactions: {
       baseUrl: '#/{network}/{contractAddr}/{marketHash}/transactions',
       args: ['network', 'contractAddr', 'marketHash']
-    }//,
-    /* static files */
-    //pageImprint: {
-    //  baseUrl: 'imprint.html',
-    //  args: []
-    //}
+    },
+    pageDisclaimer: {
+      baseUrl: '#/disclaimer.html',
+      args: []
+    }
   };
 });

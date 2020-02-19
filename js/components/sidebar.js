@@ -3,7 +3,7 @@
 /* eslint-disable quotes */
 /* eslint-disable object-curly-spacing */
 
-/* A sidebar component for React (http://balloob.github.io/react-sidebar/example/) 
+/* A sidebar component for React (http://balloob.github.io/react-sidebar/example/)
  * Repo: https://github.com/balloob/react-sidebar
  * Copyright (c) 2015 Paulus Schoutsen
  * MIT License

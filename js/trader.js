@@ -30,7 +30,7 @@
 
   var quoteProvider = digioptionsTools.quoteProvider;
 
-  var calcOptionIDToProbability = function(volatility, secondsUntilExpiration, currentSpotPrice, strikes){
+  function calcOptionIDToProbability(volatility, secondsUntilExpiration, currentSpotPrice, strikes){
     var secondsPerYear = 60*60*24 * 365;
 
     var stdDeviation = volatility * Math.sqrt(secondsUntilExpiration/secondsPerYear);
@@ -51,7 +51,7 @@
     optionIDToProbability.push(1-probability_comulated_last);
 
     return optionIDToProbability;
-  };
+  }
 
   var underlyingToVolatility = {
     // volatility per year - Please adjust!
@@ -70,9 +70,9 @@
     this.volatility = underlyingToVolatility[this.marketDefinition.marketBaseData.underlyingString]; // per year
 
     if (! this.volatility)
-      throw 'unknown volatility for ' + this.marketDefinition.marketBaseData.underlyingString;
+      throw new Error('unknown volatility for "' + this.marketDefinition.marketBaseData.underlyingString + '"');
 
-    this.offerID = 0; //utility.getRandomInt(0,Math.pow(2,32));  //  TODO
+    this.offerID = 0; //utility.getRandomInt(0,Math.pow(2,32)); // TODO
     this.offerStoreTmp = []; // TODO remove
     this.quote = null;
 
@@ -94,7 +94,7 @@
     return db.dbTables['market'].insertOrIgnore('main', {marketDefinition: self.marketDefinition})
       .then(function(){
         // TODO move
-        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.marketDefinition.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + self.marketDefinition.marketBaseData.underlying + '-' + self.marketDefinition.marketBaseData.typeDuration + '-trader.db';
+        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.marketDefinition.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + self.marketDefinition.marketBaseData.underlying + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
         console.log('filename:', filename);
 
         return db.run('attach database "' + filename + '" as ' + dbname + ';'); // TODO escape?
@@ -117,8 +117,8 @@
       })
       .then(function(result){
         //console.log('marketID', result);
-	// finally set self.dbname and self.marketID
-        self.marketID = result.marketID; 
+        // finally set self.dbname and self.marketID
+        self.marketID = result.marketID;
         self.dbname = dbname;
       }).catch(function(err){
         console.log('db error (' + dbname + '):', err);

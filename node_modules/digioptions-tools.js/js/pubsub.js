@@ -6,8 +6,8 @@
     Copyright (c) digioptions.com (https://www.digioptions.com)
 */
 
-/** File: pubsub.js
- *  A helper to access the digioptions.com xmmp server
+/**
+ * A helper to access the digioptions.com xmmp server
  */
 (function (root, factory) {
   if ( typeof define === 'function' && define.amd ) {
@@ -59,7 +59,7 @@
 
     if ((this.services_all === null) || (typeof(this.services_all) == 'undefined') || (this.services_all.length === 0)) {
       // no connection possible
-      throw 'no valid xmpp service url found';
+      throw new Error('no valid xmpp service url found');
     }
 
     // we use the first service found for now ...

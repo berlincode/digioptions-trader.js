@@ -55,6 +55,8 @@
 
   function getDigioptionsUrl(urlName, args, relativeUrl){
     var dataNetwork = dataNetworks[args.network]; // valid argument network is always required
+    if (! dataNetwork)
+      return null;
     var data = dataDigioptions[urlName];
     var url = data.baseUrl;
     for (var i=0; i < data.args.length ; i++){

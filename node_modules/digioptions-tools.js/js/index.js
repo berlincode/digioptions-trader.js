@@ -40,7 +40,7 @@
     return i;
   }
 
-  var dateStringUTCTOD = function(date) {
+  function dateStringUTCTOD(date) {
     return (
       padZero(date.getUTCHours()) +
       ':' +
@@ -48,9 +48,9 @@
       ':' +
       padZero(date.getUTCSeconds())
     );
-  };
+  }
 
-  var dateStringUTC = function(date) {
+  function dateStringUTC(date) {
     return (
       date.getUTCFullYear() +
       '-' +
@@ -60,13 +60,13 @@
       ' ' +
       dateStringUTCTOD(date)
     );
-  };
+  }
 
-  var dateStringUTCTZ = function(date) {
+  function dateStringUTCTZ(date) {
     return dateStringUTC(date) + '+00';
-  };
+  }
 
-  var dateStringLocalTOD = function(date) {
+  function dateStringLocalTOD(date) {
     return (
       padZero(date.getHours()) +
       ':' +
@@ -74,9 +74,9 @@
       ':' +
       padZero(date.getSeconds())
     );
-  };
+  }
 
-  var dateStringLocal = function(date) {
+  function dateStringLocal(date) {
     return (
       date.getFullYear() +
       '-' +
@@ -86,12 +86,12 @@
       ' ' +
       dateStringLocalTOD(date)
     );
-  };
+  }
 
-  var dateStringLocalTZ = function(date) {
+  function dateStringLocalTZ(date) {
     var tzOffset = -date.getTimezoneOffset()/60;
     return dateStringLocal(date) + (tzOffset < 0 ? '-' : '+') + padZero(Math.abs(tzOffset));
-  };
+  }
 
   return {
     PubSub: PubSub,

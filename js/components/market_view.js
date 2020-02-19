@@ -5,7 +5,7 @@
     define(
       [
         'react',
-        'digioptions-contracts.js/js/digioptions_constants',
+        'factsigner/js/constants',
         'digioptions-tools.js',
         './utils',
         './trader_view'
@@ -16,7 +16,7 @@
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
       require('react'),
-      require('digioptions-contracts.js/js/digioptions_constants'),
+      require('factsigner/js/constants'),
       require('digioptions-tools.js'),
       require('./utils.js'),
       require('./trader_view.js')
@@ -25,13 +25,13 @@
     // Global (browser)
     root.marketView = factory(
       root.React,
-      root.digioptionsContractsConstants,
+      root.factsignerConstants,
       root.digioptionsTools,
       root.utils,
       root.traderView
     );
   }
-})(this, function(React, digioptionsContractsConstants, digioptionsTools, utils, traderView){
+})(this, function(React, factsignerConstants, digioptionsTools, utils, traderView){
 
   var getDigioptionsUrl = digioptionsTools.dataNetworksUtils.getDigioptionsUrl;
   var getEtherscanUrlContract = digioptionsTools.dataNetworksUtils.getEtherscanUrlContract;
@@ -46,26 +46,26 @@
 
     self.render = function(){
       return (
-        React.createElement('div', {},
+        React.createElement(React.Fragment, null,
           this.props.marketDefinition.marketsAddr.substr(0, 12) + '... | ',
-          React.createElement('span', {className: 'hidden-xs'},
+          React.createElement('span', {className: 'd-none d-sm-inline'},
             'type: '
           ),
-          (digioptionsContractsConstants.typeDuration[this.props.marketDefinition.marketBaseData.typeDuration] || '-') + ' | ',
-          React.createElement('span', {className: 'hidden-xs'},
+          (factsignerConstants.marketIntervalById[this.props.marketDefinition.marketBaseData.marketInterval] || '-') + ' | ',
+          React.createElement('span', {className: 'd-none d-sm-inline'},
             'underlying: '
           ),
           '"' + this.props.marketDefinition.marketBaseData.underlyingString + '" ',
           (this.props.expired ?
-            React.createElement('span', {key: 'market_open_close', className: 'label label-default'}, 'closed')
+            React.createElement('span', {key: 'market_open_close', className: 'badge badge-dark'}, 'closed')
             :
-            React.createElement('span', {key: 'market_open_close', className: 'label label-success'}, 'open')
+            React.createElement('span', {key: 'market_open_close', className: 'badge badge-success'}, 'open')
           ),
           React.createElement('span', {}, ' '),
           (this.props.terminated ?
-            React.createElement('span', {key: 'market_terminated', className: 'label label-default'}, 'terminated')
+            React.createElement('span', {key: 'market_terminated', className: 'badge badge-dark'}, 'terminated')
             :
-            React.createElement('span', {key: 'market_terminated', className: 'label label-success'}, 'running')
+            React.createElement('span', {key: 'market_terminated', className: 'badge badge-success'}, 'running')
           )
         )
       );
@@ -152,7 +152,7 @@
 
       return (
         React.createElement(React.Fragment, null,
-          React.createElement('div', {className: 'panel-heading'},
+          React.createElement('div', {className: 'card-header'},
             (url_contract?
               React.createElement('a', {href: url_contract},
                 self.props.marketDefinition.marketsAddr.substr(0,12) + '...'
@@ -169,7 +169,7 @@
               'pubsub viewer'
             )
           ),
-          React.createElement('div', {className: 'panel-body'},
+          React.createElement('div', {className: 'card-body'},
             React.createElement(MarketViewBody, self.props)
           )
         )

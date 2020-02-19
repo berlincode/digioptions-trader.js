@@ -7,16 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
 
-    <script type="text/javascript" src="node_modules/digioptions-trader.js/js/babel-polyfill.js"></script>
-    <script type="text/javascript" src="node_modules/digioptions-trader.js/js/url-polyfill.js"></script>
+    <script type="text/javascript" src="js/babel-polyfill.js"></script>
+    <script type="text/javascript" src="js/url-polyfill.js"></script>
 
     <script type="text/javascript" src="node_modules/requirejs/require.js"></script>
 <!--
     <script type="text/javascript" src="node_modules/react/umd/react.production.min.js"></script>
     <script type="text/javascript" src="node_modules/react-dom/umd/react-dom.production.min.js"></script>
 
+    <script type="text/javascript" src="js/eth-lib-account.min.js"></script>
+    <script type="text/javascript" src="js/web3-utils.min.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
+    <script type="text/javascript" src="node_modules/factsigner/js/constants.js"></script>
     <script type="text/javascript" src="node_modules/factsigner/js/index.js"></script>
     <script type="text/javascript" src="node_modules/strophe.js/strophe.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-tools.js/js/xhr-request-promise.js"></script>
@@ -31,7 +35,7 @@
     <script type="text/javascript" src="node_modules/digioptions-tools.js/js/index.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/js/digioptions_markets_abi.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/js/digioptions_market_lister_abi.js"></script>
-    <script type="text/javascript" src="node_modules/digioptions-contracts.js/js/digioptions_constants.js"></script>
+    <script type="text/javascript" src="node_modules/digioptions-contracts.js/js/constants.js"></script>
     <script type="text/javascript" src="node_modules/digioptions-contracts.js/js/index.js"></script>
 
     <script type="text/javascript" src="js/components/utils.js"></script>
@@ -48,7 +52,7 @@
 -->
 </head>
 <body>
-    <div id="content" style="padding-top: 60px; word-wrap: break-word">loading ...</div>
+    <div id="content" style="word-wrap: break-word">loading ...</div>
 
     <script type="text/javascript">
 //<![CDATA[
@@ -93,6 +97,8 @@ if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined'))
   require.config({
     paths: {
       'web3': 'js/web3.min',
+      'web3-utils': 'js/web3-utils.min',
+      'eth-lib-account': 'js/eth-lib-account.min',
 
       // following is imported from node_modules folder
       'react': 'node_modules/react/umd/react.production.min',
@@ -112,11 +118,16 @@ if ((typeof require !== 'undefined') && (typeof require.config !== 'undefined'))
 
     },
     packages: [
-        {
-            name: 'digioptions-contracts.js',
-            location: 'node_modules/digioptions-contracts.js',
-            main: 'js/index.js'
-        }
+      {
+        name: 'factsigner',
+        location: 'node_modules/factsigner',
+        main: 'js/index.js'
+      },
+      {
+        name: 'digioptions-contracts.js',
+        location: 'node_modules/digioptions-contracts.js',
+        main: 'js/index.js'
+      }
     ]
   });
 
