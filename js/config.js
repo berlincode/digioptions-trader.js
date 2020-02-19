@@ -24,11 +24,11 @@
   }
 })(this, function(Web3, digioptionsTools){
 
-  var web3 = new Web3(); // eslint-disable-line  no-unused-vars
+  var web3 = new Web3(); // eslint-disable-line no-unused-vars
 
-  var contractAddressesDefault = function(dataNetwork){
+  function contractAddressesDefault(dataNetwork){
     return dataNetwork.contractDescriptions.map(function(x){return x.addr;});
-  };
+  }
 
   var config = {
 
@@ -50,6 +50,8 @@
     /* keep at least 20 markets before deleting old markets */
     marketsKeepMin: 20,
 
+    /* no trading if date of quote is older than <maxQuoteAge> seconds to the system clock */
+    maxQuoteAge: 100,
 
     /*******************/
     /* Market settings */

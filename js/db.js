@@ -40,8 +40,8 @@
   var slice = Function.call.bind(Array.prototype.slice);
   var concat = Function.call.bind(Array.prototype.concat);
 
-  var promisify = function(self, orig) {
-    var promisified = function fn() {
+  function promisify(self, orig) {
+    function promisified() {
       var args = slice(arguments);
       //var self = this; // eslint-disable-line no-invalid-this
       return new Promise(function (resolve, reject) {
@@ -54,29 +54,29 @@
           }
         }));
       });
-    };
+    }
     return promisified;
-  };
+  }
 
-  var get = function(sql, args){return promisify(db, db.get)(sql, args || []);};
-  var all = function(sql, args){return promisify(db, db.all)(sql, args || []);};
-  var run = function(sql, args){return promisify(db, db.run)(sql, args || []);};
+  function get(sql, args){return promisify(db, db.get)(sql, args || []);}
+  function all(sql, args){return promisify(db, db.all)(sql, args || []);}
+  function run(sql, args){return promisify(db, db.run)(sql, args || []);}
 
   var validRegExp = new RegExp('^[a-zA-Z0-9_]+$');
-  var quote = function(){
+  function quote(){
     // a very simple function for constructing SQL statements
     // all arguments are joined (using '.')
     for (var i = 0, j = arguments.length; i < j; i++){
       if (! validRegExp.test(arguments[i])) {
-        throw 'invalid character in str "' + arguments[i] + '"';
+        throw new Error('invalid character in str "' + arguments[i] + '"');
       }
     }
     var args = Array.prototype.slice.call(arguments);
     return args.map(function(name){return '"' + name + '"';}).join('.');
-  };
+  }
 
   /* helper functions to flatten/unflatten hierarchical data structures */
-  var unflatten = function(data) {
+  function unflatten(data) {
     if (Object(data) !== data || Array.isArray(data))
       return data;
     var result = {}, cur, prop, idx, last, temp;
@@ -92,9 +92,9 @@
       cur[prop] = data[p];
     }
     return result[''];
-  };
+  }
 
-  var flatten = function(data) {
+  function flatten(data) {
     var result = {};
     function recurse (cur, prop) {
       if (Object(cur) !== cur) {
@@ -120,9 +120,9 @@
     }
     recurse(data, '');
     return result;
-  };
+  }
 
-  var createAsync = function (filename, args) {
+  function createAsync(filename, args) {
     return new Promise(function (resolve, reject) {
       var db = new sqlite3.Database(
         filename,
@@ -136,11 +136,11 @@
         }
       );
     });
-  };
+  }
 
-  var isDatatypeJson = function(columnDatatype){
+  function isDatatypeJson(columnDatatype){
     return (columnDatatype === 'json'); // TODO indexof
-  };
+  }
 
   var DBTable = function(
     tableName,
@@ -285,7 +285,7 @@
         {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json'},
         {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json'},
-        {'name': 'marketDefinition_marketBaseData_typeDuration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_typeDuration") = "integer")'}
+        {'name': 'marketDefinition_marketBaseData_marketInterval', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'}
       ],
       sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
     },
@@ -314,14 +314,14 @@
     'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketID", "traderProps_data_dateMs");'
   ];
 
-  var updateSize = function(){
+  function updateSize(){
     get('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
       .then(function(result){
         sizeInBytes = result.size;
       });
-  };
+  }
 
-  var setupSchema = function(dbname){
+  function setupSchema(dbname){
     // check user_version
     return get('PRAGMA ' + dbname + '.user_version;')
       .then(function(dict) {
@@ -372,10 +372,9 @@
         setInterval(updateSize, 60*1000);
       });
 
-  };
+  }
 
-
-  var setup = function(mode /*optional*/){
+  function setup(mode /*optional*/){
     var filename = basedir + '/' + basename;
     console.log('try to setup database:', filename);
 
@@ -388,7 +387,7 @@
       );
     }
 
-    var closeDbAndExit = function() {
+    function closeDbAndExit() {
       console.log('Signal received.');
       if (db){
         console.log('Closing database...');
@@ -403,7 +402,7 @@
       } else {
         process.exit(0);
       }
-    };
+    }
     process.on('SIGTERM', closeDbAndExit);
     process.on('SIGINT', closeDbAndExit);
     return createAsync(
@@ -418,21 +417,21 @@
       .then(function(){
         return setupSchema('main');
       });
-  };
+  }
 
   //console.log(JSON.stringify(1.0));
 
-  var isRunning = function(){
+  function isRunning(){
     return dbRunning;
-  };
+  }
 
-  var getHandle = function(){
+  function getHandle(){
     return db;
-  };
+  }
 
-  var size = function(){
+  function size(){
     return sizeInBytes;
-  };
+  }
 
   return {
     setup: setup,

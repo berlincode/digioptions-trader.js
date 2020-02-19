@@ -88,7 +88,6 @@
 
   Market.prototype.setup = function(){ // returns Promise
     var self = this;
-
     // check if market should be started at all?
     if (this.expired){
       this.traderInfo = 'not started (already expired)';
@@ -150,14 +149,16 @@
     var ordersSigned = []; // TODO rename offersSigned
     for (var i=0 ; i < orders.length ; i ++){
       var order = Object.assign(
-        { // use default values if not excplicitly set
+        {
+          // use default values if not excplicitly set
           offerOwner: self.account.address,
           marketsAddr: self.marketDefinition.marketsAddr,
           marketHash: self.marketDefinition.marketHash
         },
         orders[i]
       );
-      var orderSigned = digioptionsContracts.signOrder(this.web3, this.account.privateKey, order);
+      //var orderSigned = digioptionsContracts.signOrder(order, this.account.privateKey);
+      var orderSigned = Object.assign({}, order, digioptionsContracts.signOrderOffer(order, this.account.privateKey));
       ordersSigned.push(orderSigned);
     }
     this.offersPublish(ordersSigned);

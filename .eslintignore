@@ -2,4 +2,5 @@
 /js/gaussian.js
 /js/babel-polyfill.js
 /js/url-polyfill.js
+/js/eth-lib-account.min.js
 /node_modules/

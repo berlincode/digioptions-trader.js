@@ -1,7 +1,7 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.7.0",
-  "description": "javascript trading tools for the ethereum based digital option exchange digioptions.com",
+  "version": "0.8.0",
+  "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
   "author": {
@@ -21,7 +21,9 @@
     "js/market.js",
     "js/trader.js",
     "js/url-polyfill.js",
+    "js/web3-utils.min.js",
     "js/web3.min.js",
+    "js/eth-lib-account.min.js",
     "js/components/main_view.js",
     "js/components/market_view.js",
     "js/components/sidebar.js",
@@ -44,7 +46,7 @@
     "ethereum"
   ],
   "dependencies": {
-    "basic-auth": "^1.1.0",
+    "basic-auth": "^2.0.0",
     "bootstrap": "^4.3.1",
     "digioptions-contracts.js": "git+https://github.com/berlincode/digioptions-contracts.js.git",
     "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
@@ -52,18 +54,18 @@
     "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
     "patch-package": "6.2.0",
-    "react": "16.6.3",
-    "react-dom": "16.6.3",
+    "react": "16.12.0",
+    "react-dom": "16.12.0",
     "requirejs": "2.3.6",
     "sqlite3": "^4.1.0",
     "web3": "2.0.0-alpha.1",
     "ws": "^7.0.0"
   },
   "devDependencies": {
-    "eslint": "^6.1.0",
+    "eslint": "^6.8.0",
     "eslint-plugin-html": "^6.0.0",
     "eslint-plugin-ie11": "^1.0.0",
-    "mocha": "^6.2.0"
+    "mocha": "^7.0.0"
   },
   "engine": {
     "node": "10.6.0"

@@ -22,6 +22,8 @@ require('digioptions-tools.js/js/strophe_node_polyfills.js');
 var clientRequireConfig = {
   paths: {
     'web3': 'js/web3.min',
+    'web3-utils': 'js/web3-utils.min',
+    'eth-lib-account': 'js/eth-lib-account.min',
 
     // following is imported from node_modules folder
     'react': 'node_modules/react/umd/react.production.min',
@@ -43,6 +45,11 @@ var clientRequireConfig = {
     'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/js/digioptions_market_lister_abi'
   },
   packages: [
+    {
+      name: 'factsigner',
+      location: 'node_modules/factsigner',
+      main: 'js/index.js'
+    },
     {
       name: 'digioptions-contracts.js',
       location: 'node_modules/digioptions-contracts.js',
@@ -78,12 +85,13 @@ var getHtmlPage = function(versionString, port, clientSetupStr, token){
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
 
     <script type="text/javascript" src="node_modules/requirejs/require.js"></script>
 
 </head>
 <body>
-    <div id="content" style="padding-top: 60px; word-wrap: break-word">loading ...</div>
+    <div id="content" style="word-wrap: break-word">loading ...</div>
 
     <script type="text/javascript">
 //<![CDATA[
@@ -101,7 +109,7 @@ var args = (function(){
   }
   return args;
 })();
-   
+
 // initial render
 var elmContent = document.getElementById('content');
 ReactDOM.render(React.createElement(mainView.MonitorView, {}, null), elmContent);
