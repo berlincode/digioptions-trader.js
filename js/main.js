@@ -392,7 +392,7 @@
 
   Monitor.prototype.start = function() {
     var self = this;
-    var provider = digioptionsTools.dataNetworksUtils.getProvider(self.network);
+    var provider = digioptionsTools.dataNetworksUtils.getProvider(self.network, config.providerArgs);
     function conn(callbackConnect, callbackDisconnect){
       //var reconnectTimer = null;
       var reconnectInterval = 3000;

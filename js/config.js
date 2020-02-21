@@ -79,6 +79,10 @@
       ]
     },
 
+    providerArgs: {
+      infuraApiKey: 'c57a2f1bef85450b897b08839e9026cc' // whitelisted only for berlincode.github.io
+    },
+
     contractAddresses: {
       // a list of contracts which are monitored
       'main': contractAddressesDefault(digioptionsTools.dataNetworks['main']),

@@ -84,6 +84,15 @@
     marketIntervalById: reverseDict(marketInterval),
 
     marketCategory: marketCategory,
-    marketCategoryById: reverseDict(marketCategory)
+    marketCategoryById: reverseDict(marketCategory),
+
+    signerAddresses: {
+      // addresses all lowercase hex
+      '0x49b6d897575b0769d45eba7e2de60a16de5b8c13': { // this is only the temporary key
+        name: 'factsigner',
+        url: 'https://www.factsigner.com/facts/id/{signerAddr}/{factHash}?accept_terms_of_service=current',
+        urlApi: 'https://www.factsigner.com/api_v1/facts/id/{signerAddr}/{factHash}?accept_terms_of_service=current'
+      }
+    },
   };
 }));
