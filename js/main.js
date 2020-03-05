@@ -452,10 +452,13 @@
 
       this.pubsub = this.setupPubsub();
 
-      self.web3.eth.getBlock('latest', function (e, blockHeader){
-        // TODO handle error
-        self.updateBlockNumbers(blockHeader);
-      });
+      self.web3.eth.getBlock('latest')
+        .then(function(blockHeader){
+          self.updateBlockNumbers(blockHeader);
+        })
+        .catch(function(error){
+          console.log('error web3.eth.getBlock()', error);
+        });
 
       // we want get get triggered if a new block was mined
       self.web3.eth.subscribe('newBlockHeaders')
