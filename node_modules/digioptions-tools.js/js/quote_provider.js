@@ -63,9 +63,13 @@
   }
 
   var symbolMapBitfinex = {
-    'BTC/USDT': 'tBTCUSD',
-    'ETH/USDT': 'tETHUSD',
-    'XRP/USDT': 'tXRPUSD'
+    'BTC\0USD': 'tBTCUSD',
+    'ETH\0USD': 'tETHUSD',
+    'XRP\0USD': 'tXRPUSD',
+
+    'BTC\0USDT': 'tBTCUSD', // TODO remove
+    'ETH\0USDT': 'tETHUSD',
+    'XRP\0USDT': 'tXRPUSD'
   };
 
   function BitfinexProvider(realtimeCallback){
@@ -86,10 +90,6 @@
     this.symbolsToSubscribe = {};
     this.realtimeCallback = realtimeCallback;
   }
-
-  BitfinexProvider.prototype.getSymbolMapReverse = function(symbol){
-    return this.symbolMapReverse[symbol];
-  };
 
   BitfinexProvider.prototype.sendSubscribe = function(symbol){
     this.ws.send(JSON.stringify({'event': 'subscribe', 'channel': 'ticker', 'symbol': symbol}));
@@ -113,7 +113,7 @@
       var response = JSON.parse(msg.data);
       //console.log(response);
       if (response.event === 'subscribed'){
-        that.mapChanIdToSymbol[response.chanId] = that.getSymbolMapReverse(response.symbol);
+        that.mapChanIdToSymbol[response.chanId] = response.symbol;
         return;
       }
       if (Array.isArray(response) && (response.length >= 3)){
@@ -122,11 +122,16 @@
         //console.log(response);
         var chanId = response[0];
         var symbol = that.mapChanIdToSymbol[chanId];
-        if (Array.isArray(response[1]) && symbol){
+        var underlyingStringDict = that.symbolsToSubscribe[symbol];
+        if (Array.isArray(response[1]) && underlyingStringDict){
           var quote = {};
           quote[KeyTimestampMs] = response[2];
           quote[KeyValue] = response[1][idxPrice]; // TODO 6 use constants (ie 'MTS')
-          that.realtimeCallback(symbol, quote);
+
+          var underlyingString;
+          for (underlyingString of Object.keys(underlyingStringDict)){
+            that.realtimeCallback(underlyingString, quote);
+          }
         }
       }
     };
@@ -145,12 +150,19 @@
     };
   };
 
-  BitfinexProvider.prototype.realtime = function(symbol) {
-    if (this.symbolsToSubscribe[symbol]){
-      return;
+  BitfinexProvider.prototype.realtime = function(symbol, underlyingString) {
+    var symbolNew;
+    if (!this.symbolsToSubscribe[symbol]){
+      symbolNew = true;
+      this.symbolsToSubscribe[symbol] = {};
+    } else {
+      symbolNew = true;
     }
 
-    this.symbolsToSubscribe[symbol] = true;
+    this.symbolsToSubscribe[symbol][underlyingString] = true;
+
+    if (!symbolNew)
+      return;
 
     if (this.ws){
       //console.log('ret', symbol);
@@ -214,12 +226,11 @@
           historyCallback(null /* err */, resp);
         } else {
           // error
-//console.log('res', resp);
           historyCallback(resp, null);
         }
       })
       .catch(function(error){
-//          historyCallback(resp);
+        //historyCallback(resp);
         console.log('quote_provider loadHistory', error); // TODO handle
       });
   };
@@ -238,15 +249,17 @@
   }
 
   var symbolFuncToProviderInstantiate = [
-    function(symbol){
-      if (symbolMapBitfinex[symbol]){
-        return {
-          name: 'bitfinex',
-          instantiateFunc: bitfinexInstantiate,
-          symbol: symbolMapBitfinex[symbol]
-        };
-      }
-      return null;
+    function(underlyingParts, underlyingString){
+      var symbol = symbolMapBitfinex[underlyingParts.name + '\0' + underlyingParts.unit];
+      if (! symbol)
+        return null;
+
+      return {
+        name: 'bitfinex',
+        instantiateFunc: bitfinexInstantiate,
+        symbol: symbol,
+        underlyingString: underlyingString
+      };
     }
   ];
 
@@ -270,7 +283,7 @@
     var provider = this.getProviderInstance(providerInfo);
 
     if (provider){
-      provider.realtime(providerInfo.symbol);
+      provider.realtime(providerInfo.symbol, providerInfo.underlyingString);
     }
   };
 
@@ -311,10 +324,13 @@
 
   };
 
-  function getProviderDataFromSymbol(symbol){
+  function getProviderDataFromUnderlyingParts(underlyingParts, underlyingString){
     var i;
     for (i=0 ; i < symbolFuncToProviderInstantiate.length ; i ++){
-      var providerData = symbolFuncToProviderInstantiate[i](symbol);
+      var providerData = symbolFuncToProviderInstantiate[i]( // TODO rename underlyingPartsFuncToProviderInstantiate
+        underlyingParts,
+        underlyingString
+      );
       if (providerData){
         return providerData;
       }
@@ -324,7 +340,7 @@
 
   return {
     'QuoteProvider': QuoteProvider,
-    'getProviderDataFromSymbol': getProviderDataFromSymbol,
+    'getProviderDataFromUnderlyingParts': getProviderDataFromUnderlyingParts,
     'BitfinexProvider': BitfinexProvider,
     'KeyTimestampMs': KeyTimestampMs,
     'KeyValue': KeyValue,

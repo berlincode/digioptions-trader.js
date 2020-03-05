@@ -55,7 +55,7 @@
           React.createElement('span', {className: 'd-none d-sm-inline'},
             'underlying: '
           ),
-          '"' + this.props.marketDefinition.marketBaseData.underlyingString + '" ',
+          JSON.stringify(this.props.marketDefinition.marketBaseData.underlyingString.split('\0'))+' ',
           (this.props.expired ?
             React.createElement('span', {key: 'market_open_close', className: 'badge badge-dark'}, 'closed')
             :

@@ -260,7 +260,8 @@
   };
 
   var tableDefinitions = {
-    'market': { // table name
+    // table name = 'market'
+    'market': {
       jsonColumns: [ // TODO rename
         //{'name': 'marketID', 'datatype': 'integer PRIMARY KEY AUTOINCREMENT'},
         {'name': 'marketID', 'datatype': 'integer PRIMARY KEY'},
@@ -289,7 +290,8 @@
       ],
       sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
     },
-    'trader': { // table name
+    // table name = 'trader'
+    'trader': {
       jsonColumns: [
         {'name': 'marketID', 'datatype': 'integer'}, // foreign key
 

@@ -217,33 +217,43 @@
                 });
               })
             ),
-            'web3 provider status: ' + (dataNetwork.web3Connected? 'connected' : 'not connected'),
-            React.createElement('br', null),
-            'pubsub status: ' + dataNetwork.pubsubFeedbackMsg,
-            React.createElement('br', null),
-            'pubsubMessageCount: ' + dataNetwork.pubsubMessageCount,
-            React.createElement('br', null),
-            'accounts: ' + dataNetwork.accounts.map(function(x){return x.address;}).join(', '),
-            React.createElement('br', null),
-            'contractAddresses: ' + dataNetwork.contractAddresses.join(', '),
-            React.createElement('br', null),
-            'last block number: ' + (dataNetwork.blockHeader? dataNetwork.blockHeader.number : '???'),
-            React.createElement('br', null),
-            'last block (local): ' + (dateBlock ? digioptionsTools.dateStringLocalTZ(dateBlock) : '-'),
-            React.createElement('br', null),
-            'last block (UTC): ' + (dateBlock ? digioptionsTools.dateStringUTCTZ(dateBlock) : '-'),
-            React.createElement('nav', {className: 'nav nav-pills flex-column'},
-              dataNetwork.sortedMarketKeys.map(function (marketHash){
-                return React.createElement(MarketViewHeadWrapped, {
-                  key: marketHash,
-                  network: network,
-                  marketHash: marketHash,
-                  marketProps: dataNetwork.marketProps[marketHash],
-                  selected: marketHash === marketHashSelected,
-                  clickMarket: self.clickMarket
-                });
+
+            (dataNetwork.errors.length > 0)?
+              dataNetwork.errors.map(function(error, i){
+                return React.createElement('div', {key: i, className: 'bg-danger text-white'},
+                  error
+                );
               })
-            )
+              :
+              React.createElement(React.Fragment, null,
+                'web3 provider status: ' + (dataNetwork.web3Connected? 'connected' : 'not connected'),
+                React.createElement('br', null),
+                'pubsub status: ' + dataNetwork.pubsubFeedbackMsg,
+                React.createElement('br', null),
+                'pubsubMessageCount: ' + dataNetwork.pubsubMessageCount,
+                React.createElement('br', null),
+                'accounts: ' + dataNetwork.accounts.map(function(x){return x.address;}).join(', '),
+                React.createElement('br', null),
+                'contractAddresses: ' + dataNetwork.contractAddresses.join(', '),
+                React.createElement('br', null),
+                'last block number: ' + (dataNetwork.blockHeader? dataNetwork.blockHeader.number : '???'),
+                React.createElement('br', null),
+                'last block (local): ' + (dateBlock ? digioptionsTools.dateStringLocalTZ(dateBlock) : '-'),
+                React.createElement('br', null),
+                'last block (UTC): ' + (dateBlock ? digioptionsTools.dateStringUTCTZ(dateBlock) : '-'),
+                React.createElement('nav', {className: 'nav nav-pills flex-column'},
+                  dataNetwork.sortedMarketKeys.map(function (marketHash){
+                    return React.createElement(MarketViewHeadWrapped, {
+                      key: marketHash,
+                      network: network,
+                      marketHash: marketHash,
+                      marketProps: dataNetwork.marketProps[marketHash],
+                      selected: marketHash === marketHashSelected,
+                      clickMarket: self.clickMarket
+                    });
+                  })
+                )
+              )
           )
         );
       }

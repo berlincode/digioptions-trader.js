@@ -80,7 +80,7 @@
     },
 
     providerArgs: {
-      infuraApiKey: 'c57a2f1bef85450b897b08839e9026cc' // whitelisted only for berlincode.github.io
+      infuraApiKey: ''
     },
 
     contractAddresses: {
@@ -90,6 +90,9 @@
       'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
       'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
     },
+
+    /* debug setting */
+    offersPublish: true,
 
     /*******************/
     /* Nodejs settings */
@@ -107,6 +110,11 @@
     }
 
   };
+
+  if (window && (window.location.hostname == 'berlincode.github.io') && (config.providerArgs.infuraApiKey == '')) {
+    // whitelisted only for berlincode.github.io
+    config.providerArgs.infuraApiKey = 'c57a2f1bef85450b897b08839e9026cc';
+  }
 
   return config;
 });

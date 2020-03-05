@@ -78,7 +78,7 @@
     this.counter = 0;
     this.pubsub_message_count = 0;
     this.timer = undefined;
-    this.terminated = false; // terminated old Market may be removed from memory
+    this.terminated = false; // terminated old market may be removed from memory
     this.blockHeader = undefined;
     this.trader = null;
     this.traderInfo = null;
@@ -95,7 +95,10 @@
       return Promise.resolve();
     }
 
-    var providerData = digioptionsTools.quoteProvider.getProviderDataFromSymbol(this.marketDefinition.marketBaseData.underlyingString);
+    var providerData = digioptionsTools.quoteProvider.getProviderDataFromUnderlyingParts(
+      this.marketDefinition.marketBaseData.underlyingParts,
+      this.marketDefinition.marketBaseData.underlyingString
+    );
     if (!providerData){
       this.traderInfo = 'not started: no quotes available for ' + this.marketDefinition.marketBaseData.underlyingString;
       this.terminated = true;
@@ -109,7 +112,7 @@
         this.genOrder.bind(this)
       );
     }catch(err) {
-      console.log('Trader not started:', err);
+      console.log('Market "' + this.marketDefinition.marketBaseData.underlyingString.replace(/\0/g,'/') + '" not started:', err);
       this.traderInfo = 'not started: ' + err;
       this.terminated = true;
       return Promise.resolve();
@@ -133,6 +136,7 @@
     return this.marketDefinition.marketsAddr;
   };
 
+  // TODO rename ...Offer
   Market.prototype.genOrder = function(orders){
     var self = this;
 
