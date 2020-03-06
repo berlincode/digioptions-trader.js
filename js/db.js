@@ -260,7 +260,8 @@
   };
 
   var tableDefinitions = {
-    'market': { // table name
+    // table name = 'market'
+    'market': {
       jsonColumns: [ // TODO rename
         //{'name': 'marketID', 'datatype': 'integer PRIMARY KEY AUTOINCREMENT'},
         {'name': 'marketID', 'datatype': 'integer PRIMARY KEY'},
@@ -277,10 +278,14 @@
         {'name': 'marketDefinition_chainID', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") in ("integer", "null"))'}, // TODO remove NULL if chainIDs were added
         {'name': 'marketDefinition_marketBaseData_baseUnitExp', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_expiration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_expiration") = "integer")'},
-        {'name': 'marketDefinition_marketBaseData_underlying', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_name', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_unit', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_marketplace', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_provider', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_underlyingString', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_transactionFee0StringPercent', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_transactionFee1StringPercent', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_transactionFeeSignerStringPercent', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_ndigit', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_ndigit") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json'},
@@ -289,7 +294,8 @@
       ],
       sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
     },
-    'trader': { // table name
+    // table name = 'trader'
+    'trader': {
       jsonColumns: [
         {'name': 'marketID', 'datatype': 'integer'}, // foreign key
 

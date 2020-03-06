@@ -51,6 +51,7 @@
     this.network = network;
     this.quoteProvider = quoteProvider;
     this.web3 = null;
+    this.errors = [];
 
     var web3 = new Web3();
 
@@ -97,6 +98,7 @@
     });
 
     return {
+      errors: this.errors,
       network: this.network,
       sortedMarketKeys: this.getSortedMarketKeys(this.markets),
       web3Connected: Boolean(this.web3),
@@ -160,10 +162,11 @@
         var marketBaseData = {
           baseUnitExp: Number(result.marketBaseData.baseUnitExp),
           expiration: Number(result.marketBaseData.expirationDatetime),
-          underlying: result.marketBaseData.underlying,
           underlyingString: result.marketBaseData.underlyingString,
-          transactionFee0StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee0).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.payoutPerNanoOptionExp),
-          transactionFee1StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee1).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.payoutPerNanoOptionExp),
+          underlyingParts: factsigner.underlyingStringToUnderlyingParts(result.marketBaseData.underlyingString),
+          transactionFee0StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee0).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
+          transactionFee1StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee1).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
+          transactionFeeSignerStringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFeeSigner).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
           ndigit: Number(result.marketBaseData.ndigit),
           signerAddr: result.marketBaseData.signerAddr,
           // TODO parseFloat
@@ -190,7 +193,7 @@
           expired,
           self.blockHeader,
           function(data_array) { // offersPublish
-            if ((self.pubsub) && (self.pubsub_feedback_connection_ok)){ // TODO
+            if (config.offersPublish && self.pubsub && self.pubsub_feedback_connection_ok){ // TODO
               self.pubsub.publish(data_array, marketsAddr, marketHash);
             }
           },
@@ -346,7 +349,7 @@
         var contract = new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), market.getMarketsAddr());
         contract.methods.getMarketDataByMarketHash(addrZero, marketHash).call() // TODO what if web3 had reconnected?
           .then(function(result) {
-            var expired = result.data.settled;
+            var expired = result.marketState.settled;
             if (expired && (! market.isExpired())){
               // expire
               market.expire();
@@ -392,7 +395,13 @@
 
   Monitor.prototype.start = function() {
     var self = this;
-    var provider = digioptionsTools.dataNetworksUtils.getProvider(self.network);
+
+    if (! config.providerArgs.infuraApiKey){
+      this.errors.push('please setup "providerArgs.infuraApiKey" in config.js');
+      return;
+    }
+
+    var provider = digioptionsTools.dataNetworksUtils.getProvider(self.network, config.providerArgs);
     function conn(callbackConnect, callbackDisconnect){
       //var reconnectTimer = null;
       var reconnectInterval = 3000;
@@ -444,10 +453,13 @@
 
       this.pubsub = this.setupPubsub();
 
-      self.web3.eth.getBlock('latest', function (e, blockHeader){
-        // TODO handle error
-        self.updateBlockNumbers(blockHeader);
-      });
+      self.web3.eth.getBlock('latest')
+        .then(function(blockHeader){
+          self.updateBlockNumbers(blockHeader);
+        })
+        .catch(function(error){
+          console.log('error web3.eth.getBlock()', error);
+        });
 
       // we want get get triggered if a new block was mined
       self.web3.eth.subscribe('newBlockHeaders')
@@ -487,7 +499,7 @@
     this.quoteProvider = new QuoteProvider(this.realtimeCallback.bind(this), null);
   }
 
-  Core.prototype.realtimeCallback = function(symbol, quote){
+  Core.prototype.realtimeCallback = function(underlyingString, quote){
     var self = this;
     config.networks.forEach(function (network){
       var monitor = self.monitors[network];
@@ -496,7 +508,7 @@
         var market = monitor.markets[marketHash];
         if (
           (! market.isTerminated()) &&
-          (market.getUnderlyingString() === symbol)
+          (market.getUnderlyingString() === underlyingString)
         ){
           market.trader.updateQuote(quote);
         }

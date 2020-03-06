@@ -5,6 +5,7 @@
     // AMD
     define(
       [
+        'web3',
         'digioptions-tools.js',
         './db',
         './gaussian'
@@ -14,6 +15,7 @@
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
+      require('web3'),
       require('digioptions-tools.js'),
       require('./db.js'),
       require('./gaussian.js')
@@ -21,13 +23,15 @@
   } else {
     // Global (browser)
     root.trader = factory(
+      root.web3,
       root.digioptionsTools,
       root.db,
       root.gaussian
     );
   }
-})(this, function(digioptionsTools, db, gaussian){
+})(this, function(Web3, digioptionsTools, db, gaussian){
 
+  var web3 = new Web3();
   var quoteProvider = digioptionsTools.quoteProvider;
 
   function calcOptionIDToProbability(volatility, secondsUntilExpiration, currentSpotPrice, strikes){
@@ -55,9 +59,13 @@
 
   var underlyingToVolatility = {
     // volatility per year - Please adjust!
-    'ETH/USDT': 0.31,
-    'BTC/USDT': 0.31,
-    'XRP/USDT': 0.31
+    'ETH\0USDT': 0.31, // TODO remove
+    'BTC\0USDT': 0.31,
+    'XRP\0USDT': 0.31,
+
+    'ETH\0USD': 0.31,
+    'BTC\0USD': 0.31,
+    'XRP\0USD': 0.31
   };
 
   var Trader = function(
@@ -67,7 +75,10 @@
     this.marketDefinition = marketDefinition;
 
     //console.log(underlyingString, strikes);
-    this.volatility = underlyingToVolatility[this.marketDefinition.marketBaseData.underlyingString]; // per year
+    this.volatility = underlyingToVolatility[ // per year
+      this.marketDefinition.marketBaseData.underlyingParts.name + '\0' +
+      this.marketDefinition.marketBaseData.underlyingParts.unit
+    ];
 
     if (! this.volatility)
       throw new Error('unknown volatility for "' + this.marketDefinition.marketBaseData.underlyingString + '"');
@@ -93,8 +104,9 @@
 
     return db.dbTables['market'].insertOrIgnore('main', {marketDefinition: self.marketDefinition})
       .then(function(){
-        // TODO move
-        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.marketDefinition.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + self.marketDefinition.marketBaseData.underlying + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
+        // TODO move/duplicate
+        var underlyingStringHex = web3.utils.utf8ToHex(self.marketDefinition.marketBaseData.underlyingString);
+        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.marketDefinition.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
         console.log('filename:', filename);
 
         return db.run('attach database "' + filename + '" as ' + dbname + ';'); // TODO escape?

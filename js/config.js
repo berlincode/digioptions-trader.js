@@ -79,6 +79,13 @@
       ]
     },
 
+    providerArgs: {
+      /* fill in here the your api key (something like 'c57a2f1bef85450b897b08839e9026cc') 
+       * without leading xxx.infura.io/v3/
+       */  
+      infuraApiKey: ''
+    },
+
     contractAddresses: {
       // a list of contracts which are monitored
       'main': contractAddressesDefault(digioptionsTools.dataNetworks['main']),
@@ -86,6 +93,9 @@
       'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
       'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
     },
+
+    /* debug setting */
+    offersPublish: true,
 
     /*******************/
     /* Nodejs settings */
@@ -103,6 +113,11 @@
     }
 
   };
+
+  if ((typeof(window) != 'undefined') && window.location && (window.location.hostname == 'berlincode.github.io') && (config.providerArgs.infuraApiKey == '')) {
+    // whitelisted only for berlincode.github.io
+    config.providerArgs.infuraApiKey = 'c57a2f1bef85450b897b08839e9026cc';
+  }
 
   return config;
 });
