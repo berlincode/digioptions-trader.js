@@ -151,7 +151,7 @@
     this.quote = quote;
   };
 
-  Trader.prototype.exec = function(/*blockHeader*/){
+  Trader.prototype.exec = function(/*blockHeader, liquidityAndPositions*/){
     // TODO callback if finished
     //var self = this;
 

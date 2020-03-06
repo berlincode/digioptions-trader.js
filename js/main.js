@@ -188,6 +188,7 @@
         var marketNew = new market.Market(
           self.updateUI.bind(self),
           self.web3,
+          contract,
           marketDefinition,
           data,
           expired,

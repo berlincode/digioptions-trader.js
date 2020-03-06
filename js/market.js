@@ -58,6 +58,7 @@
   function Market(
     contentUpdated,
     web3,
+    contract,
     marketDefinition,
     data,
     expired,
@@ -67,6 +68,7 @@
   ){
     this.contentUpdated = contentUpdated;
     this.web3 = web3;
+    this.contract = contract;
     this.expired = expired;
     this.blockHeaderInitial = blockHeaderInitial;
     this.marketDefinition = marketDefinition;
@@ -223,10 +225,15 @@
   };
 
   Market.prototype.update = function(){
-    this.counter ++;
-    this.trader.exec(
-      this.blockHeader
-    );
+    var self = this;
+    self.counter ++;
+    self.contract.methods.getLiquidityAndPositions(self.marketDefinition.marketHash).call() // (bytes32 marketHash)
+      .then(function(liquidityAndPositions){
+        self.trader.exec(
+          self.blockHeader,
+          liquidityAndPositions
+        );
+      });
 
     this.updateUI();
   };
