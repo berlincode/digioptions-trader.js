@@ -161,7 +161,6 @@
         },
         orders[i]
       );
-      //var orderSigned = digioptionsContracts.signOrder(order, this.account.privateKey);
       var orderSigned = Object.assign({}, order, digioptionsContracts.signOrderOffer(order, this.account.privateKey));
       ordersSigned.push(orderSigned);
     }

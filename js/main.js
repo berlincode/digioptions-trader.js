@@ -166,6 +166,7 @@
           underlyingParts: factsigner.underlyingStringToUnderlyingParts(result.marketBaseData.underlyingString),
           transactionFee0StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee0).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
           transactionFee1StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee1).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
+          transactionFeeSignerStringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFeeSigner).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
           ndigit: Number(result.marketBaseData.ndigit),
           signerAddr: result.marketBaseData.signerAddr,
           // TODO parseFloat
