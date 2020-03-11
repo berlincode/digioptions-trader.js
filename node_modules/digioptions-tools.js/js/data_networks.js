@@ -44,9 +44,7 @@
       etherscanTxUrl: 'https://ropsten.etherscan.io/tx/{tx}',
       contractDescriptions: [
         //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
-        //{addr: '0x4c3f03d739CB32d914E3A6CffCF4d5bB40a2c7cc', name: 'Test Contract', foreign: false},
-        //{addr: '0x7637E4EfdD22A8a7062b004D0AF3AF4e2531919a', name: 'Test Contract', foreign: false},
-        {addr: '0x65edf68f736cd2e85929666af5632406a6e130e2', name: 'Test Contract', foreign: false},
+        {addr: '0x2A355a6c19fe52Fffe7a2EcC2a673bfF943B734c', name: 'Test Contract', foreign: false},
       ],
       xmppUrlWebsocket: 'wss://ropsten.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://ropsten.xmpp.digioptions.com:{port}/http-bind',

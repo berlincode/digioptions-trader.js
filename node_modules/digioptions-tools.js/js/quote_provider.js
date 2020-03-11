@@ -65,11 +65,7 @@
   var symbolMapBitfinex = {
     'BTC\0USD': 'tBTCUSD',
     'ETH\0USD': 'tETHUSD',
-    'XRP\0USD': 'tXRPUSD',
-
-    'BTC\0USDT': 'tBTCUSD', // TODO remove
-    'ETH\0USDT': 'tETHUSD',
-    'XRP\0USDT': 'tXRPUSD'
+    'XRP\0USD': 'tXRPUSD'
   };
 
   function BitfinexProvider(realtimeCallback){

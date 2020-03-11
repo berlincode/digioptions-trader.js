@@ -139,6 +139,13 @@
 
   function getProvider(network, providerArgs){
     var dataNetwork = dataNetworks[network];
+    if (dataNetwork.ethProvider.indexOf('{infuraApiKey}') < 0)
+      return dataNetwork.ethProvider;
+
+    if (! providerArgs.infuraApiKey){
+      throw new Error('providerArgs.infuraApiKey not set');
+    }
+
     return dataNetwork.ethProvider.
       replace('{infuraApiKey}', providerArgs.infuraApiKey);
   }

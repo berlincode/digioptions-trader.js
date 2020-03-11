@@ -188,6 +188,7 @@
         var marketNew = new market.Market(
           self.updateUI.bind(self),
           self.web3,
+          contract,
           marketDefinition,
           data,
           expired,
@@ -396,12 +397,13 @@
   Monitor.prototype.start = function() {
     var self = this;
 
-    if (! config.providerArgs.infuraApiKey){
+    var provider;
+    try {
+      provider = digioptionsTools.dataNetworksUtils.getProvider(self.network, config.providerArgs);
+    } catch(err) {
       this.errors.push('please setup "providerArgs.infuraApiKey" in config.js');
       return;
     }
-
-    var provider = digioptionsTools.dataNetworksUtils.getProvider(self.network, config.providerArgs);
     function conn(callbackConnect, callbackDisconnect){
       //var reconnectTimer = null;
       var reconnectInterval = 3000;
