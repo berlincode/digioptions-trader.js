@@ -227,7 +227,7 @@
   Market.prototype.update = function(){
     var self = this;
     self.counter ++;
-    self.contract.methods.getLiquidityAndPositions(self.marketDefinition.marketHash).call({from: self.account.address}) // (bytes32 marketHash)
+    self.contract.methods.getLiquidityAndPositions(self.marketDefinition.marketHash).call({from: self.account? self.account.address: null}) // (bytes32 marketHash)
       .then(function(liquidityAndPositions){
         self.trader.exec(
           self.blockHeader,
