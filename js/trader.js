@@ -8,7 +8,8 @@
         'web3',
         'digioptions-tools.js',
         './db',
-        './gaussian'
+        './gaussian',
+        './config'
       ],
       factory
     );
@@ -18,7 +19,8 @@
       require('web3'),
       require('digioptions-tools.js'),
       require('./db.js'),
-      require('./gaussian.js')
+      require('./gaussian.js'),
+      require('./config.js')
     );
   } else {
     // Global (browser)
@@ -26,10 +28,12 @@
       root.web3,
       root.digioptionsTools,
       root.db,
+      root.gaussian,
+      root.config,
       root.gaussian
     );
   }
-})(this, function(Web3, digioptionsTools, db, gaussian){
+})(this, function(Web3, digioptionsTools, db, gaussian, config){
 
   var web3 = new Web3();
   var quoteProvider = digioptionsTools.quoteProvider;
@@ -59,10 +63,6 @@
 
   var underlyingToVolatility = {
     // volatility per year - Please adjust!
-    'ETH\0USDT': 0.31, // TODO remove
-    'BTC\0USDT': 0.31,
-    'XRP\0USDT': 0.31,
-
     'ETH\0USD': 0.31,
     'BTC\0USD': 0.31,
     'XRP\0USD': 0.31
@@ -151,16 +151,18 @@
     this.quote = quote;
   };
 
-  Trader.prototype.exec = function(/*blockHeader, liquidityAndPositions*/){
+  Trader.prototype.exec = function(blockHeader/*, liquidityAndPositions*/){
     // TODO callback if finished
     //var self = this;
 
     var infoStrings = [];
     var errorStrings = [];
 
+    // TODO additional check against real 'now' (e.g 'var epochMilliSeconds = new Date().getTime();')
     if (
       (! this.quote) ||
-      (this.quote[quoteProvider.KeyTimestampMs] + 100000 < (new Date()).getTime())
+      //(config.maxQuoteAge && (this.quote[quoteProvider.KeyTimestampMs] + config.maxQuoteAge *1000 < (new Date()).getTime()))
+      (config.maxQuoteAge && (this.quote[quoteProvider.KeyTimestampMs] + config.maxQuoteAge *1000 < blockHeader.timestamp*1000))
     ){
       infoStrings.push('no (or no recent) quote');
       this.infoStrings = infoStrings;
