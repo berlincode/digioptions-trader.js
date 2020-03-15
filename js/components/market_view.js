@@ -107,6 +107,8 @@
               React.createElement('br', null),
               'transactionFee1: ' + this.props.marketDefinition.marketBaseData.transactionFee1StringPercent + ' %',
               React.createElement('br', null),
+              'transactionFeeSigner: ' + this.props.marketDefinition.marketBaseData.transactionFeeSignerStringPercent + ' %',
+              React.createElement('br', null),
               'expiration (epoch seconds): ' + this.props.marketDefinition.marketBaseData.expiration,
               React.createElement('br', null),
               'expiration (local): ' + digioptionsTools.dateStringLocalTZ(expirationDate),

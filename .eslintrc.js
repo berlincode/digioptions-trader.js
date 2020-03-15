@@ -1,6 +1,7 @@
 module.exports = {
     "globals": {
-        "define": true
+        "define": true,
+        "Promise": true
     },
     "env": {
         "browser": true,

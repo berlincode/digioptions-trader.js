@@ -226,7 +226,14 @@
               })
               :
               React.createElement(React.Fragment, null,
-                'web3 provider status: ' + (dataNetwork.web3Connected? 'connected' : 'not connected'),
+                'web3 provider status: ',
+                (dataNetwork.web3Connected? 
+                  'connected'
+                  :
+                  React.createElement('span',  {className: 'bg-danger text-white'},
+                    'not connected'
+                  )
+                ),
                 React.createElement('br', null),
                 'pubsub status: ' + dataNetwork.pubsubFeedbackMsg,
                 React.createElement('br', null),

@@ -37,7 +37,7 @@
     /**************************/
 
     /* list networks that should be monitored (e.g. 'main', 'ropsten', ...) */
-    networks: ['ropsten'],
+    networks: ['main'], /* e.g. 'main', 'ropsten', etc */
 
     /* list/try to start markets that are expired no more than 74 hours ago */
     marketsListExpiredSeconds: 74 * 60 * 60,
@@ -52,6 +52,9 @@
 
     /* no trading if date of quote is older than <maxQuoteAge> seconds to the system clock */
     maxQuoteAge: 100,
+
+    /* try to reconnect to geth provider after ~ ms */
+    gethReconnectInterval: 3000,
 
     /*******************/
     /* Market settings */
