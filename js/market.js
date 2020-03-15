@@ -36,6 +36,8 @@
   }
 })(this, function(Web3, factsigner, digioptionsTools, digioptionsContracts, config, trader){
 
+  var web3 = new Web3(); // eslint-disable-line no-unused-vars
+
   /*
   Each market class should have following methods:
     * stateToProps()
@@ -57,22 +59,22 @@
 
   function Market(
     contentUpdated,
-    web3,
-    contract,
+    account,
     marketDefinition,
     data,
     expired,
     blockHeaderInitial,
+    getMarketsContract,
     offersPublish,
     quoteProvider
   ){
     this.contentUpdated = contentUpdated;
-    this.web3 = web3;
-    this.contract = contract;
+    this.account = account;
     this.expired = expired;
     this.blockHeaderInitial = blockHeaderInitial;
     this.marketDefinition = marketDefinition;
     this.data = data;
+    this.getMarketsContract = getMarketsContract;
     this.offersPublish = offersPublish;
     this.quoteProvider = quoteProvider;
 
@@ -84,8 +86,6 @@
     this.blockHeader = undefined;
     this.trader = null;
     this.traderInfo = null;
-
-    this.account = web3.eth.accounts.wallet.accounts[0]; // default is to take the first account
   }
 
   Market.prototype.setup = function(){ // returns Promise
@@ -227,12 +227,17 @@
   Market.prototype.update = function(){
     var self = this;
     self.counter ++;
-    self.contract.methods.getLiquidityAndPositions(self.marketDefinition.marketHash).call({from: self.account? self.account.address: null}) // (bytes32 marketHash)
+    var contract = self.getMarketsContract();
+
+    contract.methods.getLiquidityAndPositions(self.marketDefinition.marketHash).call({from: self.account? self.account.address: null}) // (bytes32 marketHash)
       .then(function(liquidityAndPositions){
         self.trader.exec(
           self.blockHeader,
           liquidityAndPositions
         );
+      })
+      .catch(function(error){
+        console.log('getLiquidityAndPositions error for ' + this.marketDefinition.marketBaseData.underlyingString + ':', error);
       });
 
     this.updateUI();

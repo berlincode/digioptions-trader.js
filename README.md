@@ -1,6 +1,8 @@
 digioptions-trader.js
 =====================
 
+[![Version](https://img.shields.io/github/v/tag/berlincode/digioptions-trader.js.svg?label=version&sort=semver&logo=github)](https://github.com/berlincode/digioptions-trader.js)
+
 Customizable automatic trading system for DigiOptions (javascript)
 
 This is a simple javascript trading solution for the ethereum based digital

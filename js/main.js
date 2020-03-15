@@ -141,16 +141,18 @@
 
   Monitor.prototype.setupMarket = function(marketsAddr, marketHash){
     var self = this;
-    var contract = new this.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
+    var contract = new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
 
     var key = marketHash.toLowerCase();
-    if (this.markets[key]){
-      // market already exists
-      return;
-    }
 
     contract.methods.getMarketDataByMarketHash(addrZero, marketHash).call()
       .then(function(result) {
+
+        if (self.markets[key]){
+          // market already exists
+          //console.log('skip market');
+          return null;
+        }
 
         var data = {
           winningOptionID: Number(result.marketState.winningOptionID),
@@ -164,9 +166,9 @@
           expiration: Number(result.marketBaseData.expirationDatetime),
           underlyingString: result.marketBaseData.underlyingString,
           underlyingParts: factsigner.underlyingStringToUnderlyingParts(result.marketBaseData.underlyingString),
-          transactionFee0StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee0).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
-          transactionFee1StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee1).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
-          transactionFeeSignerStringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFeeSigner).mul(self.web3.utils.toBN('100')), digioptionsContracts.constants.atomicOptionPayoutWeiExp),
+          transactionFee0StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee0), 4-2),
+          transactionFee1StringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFee1), 4-2),
+          transactionFeeSignerStringPercent: factsigner.toUnitStringExact(self.web3.utils.toBN(result.marketBaseData.transactionFeeSigner), 4-2),
           ndigit: Number(result.marketBaseData.ndigit),
           signerAddr: result.marketBaseData.signerAddr,
           // TODO parseFloat
@@ -187,12 +189,14 @@
         //console.log('new market (real trigger)', key);
         var marketNew = new market.Market(
           self.updateUI.bind(self),
-          self.web3,
-          contract,
+          self.web3.eth.accounts.wallet.accounts[0], // default is to take the first account
           marketDefinition,
           data,
           expired,
           self.blockHeader,
+          function(){ //getMarketsContract
+            return new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
+          },
           function(data_array) { // offersPublish
             if (config.offersPublish && self.pubsub && self.pubsub_feedback_connection_ok){ // TODO
               self.pubsub.publish(data_array, marketsAddr, marketHash);
@@ -200,15 +204,19 @@
           },
           self.quoteProvider
         );
+
+        self.markets[key] = marketNew;
         marketNew.setup()
           .then(function(){
-            self.markets[key] = marketNew;
             self.updateUI(); // to show the new market immediately
 
             if (! self.markets[key].isTerminated()){
               self.pubsub.subscribe(marketsAddr, marketHash);
             }
           });
+      })
+      .catch(function(error){
+        console.log('promise catch market new / setup', error);
       });
 
   };
@@ -406,7 +414,6 @@
     }
     function conn(callbackConnect, callbackDisconnect){
       //var reconnectTimer = null;
-      var reconnectInterval = 3000;
       // TODO dummy / rewrite
       function connect(){
         var web3 = new Web3(provider); // one web3 object where just the provider ist updated on reconnect
@@ -414,12 +421,12 @@
           console.log('ready', self.network);
         });
         web3.currentProvider.on('close', function () {
-          console.log('close', self.network, web3.connected);
+          console.log('closing network', self.network, 'web3.connected:', web3.connected);
           callbackDisconnect();
           console.log('Attempting to reconnect in some seconds...', self.network);
           setTimeout(function(){
             connect();
-          }, reconnectInterval);
+          }, config.gethReconnectInterval);
         });
         web3.currentProvider.on('connect', function () {
           console.log('web3 provider (re-)connected', self.network);
@@ -431,7 +438,7 @@
           console.log('Attempting to reconnect in some seconds...', self.network);
           setTimeout(function(){
             connect();
-          }, reconnectInterval);
+          }, config.gethReconnectInterval);
         });
         web3.currentProvider.on('end', function(/* e */){
           console.log('WS end', self.network);
@@ -439,7 +446,7 @@
           console.log('Attempting to reconnect in some seconds...', self.network);
           setTimeout(function(){
             connect();
-          }, reconnectInterval);
+          }, config.gethReconnectInterval);
         });
       }
       connect();
@@ -472,20 +479,22 @@
           self.updateBlockNumbers(blockHeader);
         });
 
-      setInterval(
-        function(){
-          // this refreshes the 'uptime' field to show that everything is running
-          self.updateUI();
-        }.bind(this),
-        10000
-      );
     }
     function callbackDisconnect(){
       self.web3 = null;
+//xx
       console.log('callbackDisconnect');
     }
 
     conn(callbackConnect.bind(this), callbackDisconnect.bind(this));
+
+    setInterval(
+      function(){
+        // this refreshes the 'uptime' field to show that everything is running
+        self.updateUI();
+      }.bind(this),
+      10000
+    );
   };
 
   function networkConfigured(network){

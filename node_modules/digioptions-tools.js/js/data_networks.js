@@ -22,7 +22,14 @@
       digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
       etherscanAddressUrl: 'https://etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://etherscan.io/tx/{tx}',
-      contractDescriptions: [],
+      contractDescriptions: [
+        //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
+        {
+          addr: '0x78aba7dfF4719046B1619FC4EF48E6b1026CB459', // points to 0xE9809c4a9f2926CF5276d4EfdF492F9f543E39
+          name: 'Preview',
+          foreign: false
+        },
+      ],
       xmppUrlWebsocket: 'wss://mainnet.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://mainnet.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],
@@ -44,7 +51,11 @@
       etherscanTxUrl: 'https://ropsten.etherscan.io/tx/{tx}',
       contractDescriptions: [
         //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
-        {addr: '0x2A355a6c19fe52Fffe7a2EcC2a673bfF943B734c', name: 'Test Contract', foreign: false},
+        {
+          addr: '0x37e8C2D1B5ccaAC1b1B54e94560cF42B7beDeb03', // points to 0x612CCe54Fb350739363F4F050A113E80427B881C
+          name: 'Test contract',
+          foreign: false
+        },
       ],
       xmppUrlWebsocket: 'wss://ropsten.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://ropsten.xmpp.digioptions.com:{port}/http-bind',
@@ -65,7 +76,9 @@
       digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
       etherscanAddressUrl: 'https://kovan.etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://kovan.etherscan.io/tx/{tx}',
-      contractDescriptions: [],
+      contractDescriptions: [
+        //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
+      ],
       xmppUrlWebsocket: 'wss://kovan.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://kovan.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],
@@ -88,8 +101,6 @@
       etherscanTxUrl: 'https://rinkeby.etherscan.io/tx/{tx}',
       contractDescriptions: [
         //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
-        //{addr: '0x1645E8B932B576013f9bA76c6699F6838de5cC75', name: 'Test Contract', foreign: false}
-        //{addr: '0x0943DBC42CB14dE4BEc0b53d1016070e7Dbf85CC', name: 'Test Contract', foreign: false}
       ],
       xmppUrlWebsocket: 'wss://rinkeby.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://rinkeby.xmpp.digioptions.com:{port}/http-bind',
@@ -113,7 +124,9 @@
       //etherscanApiUrl: 'https://goerli.etherscan.io/api',
       etherscanAddressUrl: 'https://goerli.etherscan.io/address/{contractAddr}',
       etherscanTxUrl: 'https://goerli.etherscan.io/tx/{tx}',
-      contractDescriptions: [],
+      contractDescriptions: [
+        //{addr: '0x0943DBC42CB14dE4BEc0b53d1016070e7Dbf85CC', name: 'Test Contract', foreign: false}
+      ],
       xmppUrlWebsocket: 'wss://goerli.xmpp.digioptions.com:{port}/websocket',
       xmppUrlHttpBind: 'https://goerli.xmpp.digioptions.com:{port}/http-bind',
       xmppPortsWebsocket: [5280],

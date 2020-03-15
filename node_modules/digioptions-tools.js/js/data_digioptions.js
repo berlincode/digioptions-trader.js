@@ -22,7 +22,7 @@
       args: ['network']
     },
     pageMarketList: {
-      baseUrl: '#/{network}/{contractAddr}/list',
+      baseUrl: '#/{network}/{contractAddr}',
       args: ['network', 'contractAddr']
     },
     pageMarketListSelected: {
