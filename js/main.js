@@ -139,9 +139,13 @@
     }
   };
 
-  Monitor.prototype.setupMarket = function(marketsAddr, marketHash){
+  Monitor.prototype.setupMarket = function(contractDescription, marketHash){
     var self = this;
-    var contract = new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
+
+    var contract = new self.web3.eth.Contract(
+      digioptionsContracts.digioptionsMarketsAbi(),
+      contractDescription.marketsAddr
+    );
 
     var key = marketHash.toLowerCase();
 
@@ -181,9 +185,21 @@
         var marketDefinition = {
           network: self.network,
           chainID: self.dataNetwork.chainID,
-          marketsAddr: marketsAddr,
           marketHash: marketHash,
           marketBaseData: marketBaseData
+        };
+
+        var contractDescriptionReduced = {
+          // keep only JSON serializable parts that are from marketsContract
+
+          atomicOptionPayoutWeiExpBN: contractDescription.atomicOptionPayoutWeiExpBN,
+          atomicOptionPayoutWeiBN: contractDescription.atomicOptionPayoutWeiBN,
+          atomicOptionsPerFullOptionBN: contractDescription.atomicOptionsPerFullOptionBN,
+          blockNumberCreated: contractDescription.blockNumberCreated,
+          marketsAddr: contractDescription.marketsAddr,
+          offerMaxBlocksIntoFuture: contractDescription.offerMaxBlocksIntoFuture,
+          timestampMarketsCreated: contractDescription.timestampMarketsCreated,
+          versionMarkets: contractDescription.versionMarkets
         };
 
         //console.log('new market (real trigger)', key);
@@ -191,27 +207,28 @@
           self.updateUI.bind(self),
           self.web3.eth.accounts.wallet.accounts[0], // default is to take the first account
           marketDefinition,
+          contractDescriptionReduced,
           data,
           expired,
           self.blockHeader,
-          function(){ //getMarketsContract
-            return new self.web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), marketsAddr);
-          },
           function(data_array) { // offersPublish
             if (config.offersPublish && self.pubsub && self.pubsub_feedback_connection_ok){ // TODO
-              self.pubsub.publish(data_array, marketsAddr, marketHash);
+              self.pubsub.publish(data_array, contractDescription.marketsAddr, marketHash);
             }
           },
           self.quoteProvider
         );
 
         self.markets[key] = marketNew;
+
+        marketNew.web3Connected(self.web3);
+
         marketNew.setup()
           .then(function(){
             self.updateUI(); // to show the new market immediately
 
             if (! self.markets[key].isTerminated()){
-              self.pubsub.subscribe(marketsAddr, marketHash);
+              self.pubsub.subscribe(contractDescription.marketsAddr, marketHash);
             }
           });
       })
@@ -225,8 +242,8 @@
     var self = this;
 
     config.contractAddresses[self.network].forEach(function (contractAddr){
-      var marketsAddr;
       var marketSearch;
+      var contractDescription;
       //var contractMarketListerDetails = null;
 
       // use any contract abi for calling getContractInfo()
@@ -239,13 +256,11 @@
         .then(function(contractInfo) {
           //console.log('contractInfo', contractInfo);
 
-          var contractDescription = digioptionsContracts.contractInfoToContractDescription(
+          contractDescription = digioptionsContracts.contractInfoToContractDescription(
             self.web3,
             contractAddr,
             contractInfo
           );
-
-          marketsAddr = contractDescription.digiOptionsMarketsAddr;
 
           marketSearch = digioptionsContracts.marketSearchSetup(
             contractDescription,
@@ -279,8 +294,8 @@
             var marketHash = marketDataList[i].marketHash;
             var key = marketHash.toLowerCase();
             if (! self.markets[key]){
-              //console.log('new market', contractAddr, marketsAddr, marketHash);
-              self.setupMarket(marketsAddr, marketHash);
+              //console.log('new market', contractAddr, contractDescription.marketsAddr, marketHash);
+              self.setupMarket(contractDescription, marketHash);
             }
           }
         })
@@ -412,9 +427,20 @@
       this.errors.push('please setup "providerArgs.infuraApiKey" in config.js');
       return;
     }
+
     function conn(callbackConnect, callbackDisconnect){
-      //var reconnectTimer = null;
-      // TODO dummy / rewrite
+      var reconnectTimer = null;
+
+      function disconnect(){
+        if (!reconnectTimer){
+          callbackDisconnect();
+          console.log('Attempting to reconnect in some seconds to network ' + self.network);
+          reconnectTimer = setTimeout(function(){
+            reconnectTimer = null;
+            connect();
+          }, config.gethReconnectInterval);
+        }
+      }
       function connect(){
         var web3 = new Web3(provider); // one web3 object where just the provider ist updated on reconnect
         web3.currentProvider.on('ready;', function () {
@@ -422,11 +448,7 @@
         });
         web3.currentProvider.on('close', function () {
           console.log('closing network', self.network, 'web3.connected:', web3.connected);
-          callbackDisconnect();
-          console.log('Attempting to reconnect in some seconds...', self.network);
-          setTimeout(function(){
-            connect();
-          }, config.gethReconnectInterval);
+          disconnect();
         });
         web3.currentProvider.on('connect', function () {
           console.log('web3 provider (re-)connected', self.network);
@@ -434,19 +456,11 @@
         });
         web3.currentProvider.on('error', function(/* e */){
           console.log('WS Error', self.network/*, e*/);
-          callbackDisconnect();
-          console.log('Attempting to reconnect in some seconds...', self.network);
-          setTimeout(function(){
-            connect();
-          }, config.gethReconnectInterval);
+          disconnect();
         });
         web3.currentProvider.on('end', function(/* e */){
           console.log('WS end', self.network);
-          callbackDisconnect();
-          console.log('Attempting to reconnect in some seconds...', self.network);
-          setTimeout(function(){
-            connect();
-          }, config.gethReconnectInterval);
+          disconnect();
         });
       }
       connect();
@@ -479,11 +493,16 @@
           self.updateBlockNumbers(blockHeader);
         });
 
+      for (var marketHash in self.markets){
+        self.markets[marketHash].web3Connected(self.web3);
+      }
+
     }
     function callbackDisconnect(){
       self.web3 = null;
-//xx
-      console.log('callbackDisconnect');
+      for (var marketHash in self.markets){
+        self.markets[marketHash].web3Disconnected();
+      }
     }
 
     conn(callbackConnect.bind(this), callbackDisconnect.bind(this));

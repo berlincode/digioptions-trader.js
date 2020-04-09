@@ -73,15 +73,8 @@
               {
                 type: 'button',
                 style: {
-                  //paddingTop: 12,
-                  //paddingBottom: 15,
-                  //paddingLeft: 10,
-                  //paddingRight: 10,
-
                   position: 'relative',
                   padding: 12,
-                  marginLeft: 8,
-                  marginRight: 16,
                   backgroundColor: 'transparent',
                   backgroundImage: 'none',
                   border: '1px solid transparent'
@@ -94,7 +87,7 @@
               React.createElement('span', {style: {backgroundColor: '#fff', width: 22, display: 'block', height: 2, marginTop: 4, marginBottom: 2}})
             )
           ),
-          React.createElement('span', {id: 'navbar-text', className: 'navbar-text mr-auto', style: {color: '#ffffff', paddingRight: 100}}, null)
+          React.createElement('span', {id: 'navbar-text', className: 'navbar-text mr-auto', style: {color: '#ffffff'}}, null)
         )
       );
     };
@@ -269,12 +262,15 @@
         React.createElement(LayoutView, {sidebar: sidebarContent, ref: self.child},
           React.createElement('div', {className: 'tab-content clearfix'},
             marketHashSelected &&
+            React.createElement(marketView.MarketViewMessages, {marketMessages: dataNetwork.marketProps[marketHashSelected].marketMessages}),
+            marketHashSelected &&
+            React.createElement(marketView.MarketLiveDataView, {counter: dataNetwork.marketProps[marketHashSelected].counter, pubsubMessageCount: dataNetwork.marketProps[marketHashSelected].pubsubMessageCount}),
+            marketHashSelected &&
             React.createElement('div', {key: marketHashSelected, className: 'card tab-pane active'},
               React.createElement(marketView.MarketViewMain, dataNetwork.marketProps[marketHashSelected])
             )
           )
         )
-
       );
     };
   }

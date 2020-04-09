@@ -132,6 +132,23 @@
       }
     };
 
+    // catch errors
+    try {
+      this.ws.on('error', function(){
+        console.log('quote_provider websocket error');
+      });
+    } catch(error){
+      // pass
+    }
+    try {
+      this.ws.onerror(function(){
+        // catch error
+        console.log('quote_provider websocket error');
+      });
+    } catch(error){
+      // pass
+    }
+
     this.ws.onclose = function(){
       if (that.reconnect){
         // try to reconnect in 5 seconds

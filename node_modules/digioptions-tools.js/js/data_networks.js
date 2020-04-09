@@ -25,7 +25,7 @@
       contractDescriptions: [
         //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
         {
-          addr: '0x78aba7dfF4719046B1619FC4EF48E6b1026CB459', // points to 0xE9809c4a9f2926CF5276d4EfdF492F9f543E39
+          addr: '0xaf15cB5c8c2a73e8C5161f3b8066502188B239CC', // points to 0xE9809c4a9f2926CF5276d4EfdF492F9f543E39
           name: 'Preview',
           foreign: false
         },
@@ -52,7 +52,7 @@
       contractDescriptions: [
         //e.g. {addr: '0x0000000000000000000000000000000000000000', name: '<your contract name>', foreign: false},
         {
-          addr: '0x37e8C2D1B5ccaAC1b1B54e94560cF42B7beDeb03', // points to 0x612CCe54Fb350739363F4F050A113E80427B881C
+          addr: '0xA01DdAfE79342E8A98b7f972DF1C87ADd426DbfE', // points to 0x612CCe54Fb350739363F4F050A113E80427B881C
           name: 'Test contract',
           foreign: false
         },
