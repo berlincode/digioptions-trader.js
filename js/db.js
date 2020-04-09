@@ -7,6 +7,7 @@
     // AMD
     define(
       [
+        'web3'
         // no db
       ],
       factory
@@ -14,22 +15,26 @@
   } else if (typeof module !== 'undefined' && module.exports) {
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
+      require('web3'),
       require('sqlite3')
     );
   } else {
     // Global (browser)
     root.db = factory(
-      root.db
+      root.web3
+      // no db
     );
   }
-})(this, function(sqlite3){
+})(this, function(Web3, sqlite3){
+
+  var web3 = new Web3();
 
   var dbRunning = false;
   var basename = 'trader';
   var basedir = './';
   var db = null;
   var sizeInBytes = null;
-  var dbUserVersion = 9;
+  var dbUserVersion = 11;
   var uniqueID = 0;
   var dbTables = {};
   var version;
@@ -94,10 +99,13 @@
     return result[''];
   }
 
-  function flatten(data) {
+  function flatten(data, keyDict) {
     var result = {};
     function recurse (cur, prop) {
-      if (Object(cur) !== cur) {
+      if (keyDict[prop]){
+        // if prop is key in keyDict do not flatten it further
+        result[prop] = cur;
+      } else if (Object(cur) !== cur) {
         result[prop] = cur;
       } else if (Array.isArray(cur)) {
         /* do not flatten arrays */
@@ -138,7 +146,7 @@
     });
   }
 
-  function isDatatypeJson(columnDatatype){
+  function isDatatypeJson(columnDatatype){ // TODO remove
     return (columnDatatype === 'json'); // TODO indexof
   }
 
@@ -150,8 +158,8 @@
     this.tableName = tableName;
     this.columns = columns;
     this.sqlCreateTableExtra = sqlCreateTableExtra || '';
-    this.columnType = columns.reduce(function(map, column) {
-      map[column.name] = column.datatype;
+    this.columnByName = columns.reduce(function(map, column) {
+      map[column.name] = column;
       return map;
     }, {});
     this.warnedKeys = {};
@@ -167,10 +175,11 @@
   };
 
   DBTable.prototype.insert = function(dbname, dataDict, command){
+    var self = this;
 
     command = command || 'INSERT';
 
-    if (this.columnType.version && version) {
+    if (self.columnByName.version && version) {
       // if table has a version column we automatically set a default
       dataDict = Object.assign(
         {
@@ -181,28 +190,29 @@
       );
     }
 
-    var dataDictFlattend = flatten(dataDict);
+    var dataDictFlattend = flatten(dataDict, self.columnByName);
     if (warnUnknownKeys){
       for (var key in dataDictFlattend) {
-        if ((!(this.columnType[key])) && (!this.warnedKeys[key])){
+        if ((!(self.columnByName[key])) && (!self.warnedKeys[key])){
           console.log('Warning: not storing key to database:', key);
-          this.warnedKeys[key] = true; // remember this key and do not print warning again
+          self.warnedKeys[key] = true; // remember this key and do not print warning again
         }
       }
     }
 
     // used columns
-    var columns = this.columns.filter(function(col){return col.name in dataDictFlattend;});
+    var columns = self.columns.filter(function(col){return col.name in dataDictFlattend;});
 
     var sql = (
-      command + ' INTO ' + quote(dbname, this.tableName) + ' (' + // this does not change primary key marketID
+      command + ' INTO ' + quote(dbname, self.tableName) + ' (' + // this does not change primary key marketID
       (columns.map(function(column){return quote(column.name);}).join(', ')) +
       ') VALUES (' +
       (columns.map(function(column){return isDatatypeJson(column.datatype)? 'json(?)' : '(?)';}).join(', ')) +
       ')'
     );
 
-    var values = columns.map(function(column){return isDatatypeJson(column.datatype)? JSON.stringify(dataDictFlattend[column.name]) : dataDictFlattend[column.name];});
+    var values = columns.map(function(column){
+      return column.encode? column.encode(dataDictFlattend[column.name]) : dataDictFlattend[column.name];});
     return run(sql, values);
   };
 
@@ -255,7 +265,9 @@
   DBTable.prototype.unflattenFromDict = function(rowDict){
     var self = this;
     var row = {};
-    Object.keys(rowDict).forEach(function(name){row[name] = isDatatypeJson(self.columnType[name])? JSON.parse(rowDict[name]) : rowDict[name];});
+    Object.keys(rowDict).forEach(function(name){
+      row[name] = self.columnByName[name].decode? self.columnByName[name].decode(rowDict[name]) : rowDict[name];
+    });
     return unflatten(row);
   };
 
@@ -267,14 +279,13 @@
         {'name': 'marketID', 'datatype': 'integer PRIMARY KEY'},
 
         {'name': 'marketDefinition_network', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketsAddr', 'datatype': 'string'},
+        {'name': 'contractDescription_marketsAddr', 'datatype': 'string'},
         {'name': 'marketDefinition_marketHash', 'datatype': 'string'},
-
-        {'name': 'version', 'datatype': 'string'},
         //{'name': 'marketDefinition_marketHash', 'datatype': 'string CHECK (typeof("marketDefinition_marketHash") = "string")'},
 
-        //{'name': 'marketDefinition_marketListerAddr', 'datatype': 'json'}, // TODO
-        //TODO contract versions
+        {'name': 'version', 'datatype': 'string'},
+
+        //{'name': 'marketDefinition_marketListerAddr', 'datatype': 'json', , encode: JSON.stringify, decode: JSON.parse}, // TODO
         {'name': 'marketDefinition_chainID', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") in ("integer", "null"))'}, // TODO remove NULL if chainIDs were added
         {'name': 'marketDefinition_marketBaseData_baseUnitExp', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_expiration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_expiration") = "integer")'},
@@ -288,26 +299,39 @@
         {'name': 'marketDefinition_marketBaseData_transactionFeeSignerStringPercent', 'datatype': 'string'},
         {'name': 'marketDefinition_marketBaseData_ndigit', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_ndigit") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json'},
-        {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json'},
-        {'name': 'marketDefinition_marketBaseData_marketInterval', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'}
+        {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
+        {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
+        {'name': 'marketDefinition_marketBaseData_marketInterval', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+
+        {'name': 'contractDescription_blockNumberCreated', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+        {'name': 'contractDescription_timestampMarketsCreated', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+        {'name': 'contractDescription_versionMarkets_major', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+        {'name': 'contractDescription_versionMarkets_minor', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+        {'name': 'contractDescription_versionMarkets_bugfix', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+        {'name': 'contractDescription_offerMaxBlocksIntoFuture', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
+        {'name': 'contractDescription_atomicOptionPayoutWeiExpBN', 'datatype': 'string', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
+        {'name': 'contractDescription_atomicOptionPayoutWeiBN', 'datatype': 'string', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
+        {'name': 'contractDescription_atomicOptionsPerFullOptionBN', 'datatype': 'string', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
       ],
-      sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
+      sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
     },
     // table name = 'trader'
     'trader': {
       jsonColumns: [
-        {'name': 'marketID', 'datatype': 'integer'}, // foreign key
+        // foreign key
+        {'name': 'marketID', 'datatype': 'integer'},
 
         {'name': 'version', 'datatype': 'string'},
 
         {'name': 'traderProps_quote_timestampMs', 'datatype': 'integer'},
         {'name': 'traderProps_quote_value', 'datatype': 'real'},
 
-        {'name': 'traderProps_infoStrings', 'datatype': 'json'},
-        {'name': 'traderProps_errorStrings', 'datatype': 'json'},
+        {'name': 'traderProps_infoStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
+        {'name': 'traderProps_errorStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
         {'name': 'traderProps_data_dateMs', 'datatype': 'integer'},
-        {'name': 'traderProps_data_volatility' , 'datatype': 'real'}
+        {'name': 'traderProps_data_volatility' , 'datatype': 'real'},
+        {'name': 'traderProps_data_cashEth' , 'datatype': 'real'},
+        {'name': 'traderProps_data_liquidityEth' , 'datatype': 'real'}
 
         // add here your custom data columns
       ],
@@ -316,7 +340,7 @@
   };
 
   var sqlCommandsExtra = [
-    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition_network", "marketDefinition_marketsAddr", "marketDefinition_marketHash");',
+    'CREATE UNIQUE INDEX IF NOT EXISTS MarketIndexUnique ON market ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash");',
     'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketID", "traderProps_data_dateMs");'
   ];
 
@@ -424,8 +448,6 @@
         return setupSchema('main');
       });
   }
-
-  //console.log(JSON.stringify(1.0));
 
   function isRunning(){
     return dbRunning;

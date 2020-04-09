@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -48,7 +48,7 @@
   ],
   "dependencies": {
     "basic-auth": "^2.0.0",
-    "bootstrap": "^4.3.1",
+    "bootstrap": "~4.3.1",
     "digioptions-contracts.js": "git+https://github.com/berlincode/digioptions-contracts.js.git",
     "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
     "factsigner": "git+https://github.com/berlincode/factsigner.git",

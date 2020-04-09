@@ -61,7 +61,7 @@
     return optionIDToProbability;
   }
 
-  var underlyingToVolatility = {
+  var underlyingCoreData = {
     // volatility per year - Please adjust!
     'ETH\0USD': 0.31,
     'BTC\0USD': 0.31,
@@ -69,13 +69,13 @@
   };
 
   var Trader = function(
-    marketDefinition
+    marketDefinition,
+    contractDescription
   ){
-    //var self = this;
     this.marketDefinition = marketDefinition;
+    this.contractDescription = contractDescription;
 
-    //console.log(underlyingString, strikes);
-    this.volatility = underlyingToVolatility[ // per year
+    this.volatility = underlyingCoreData[ // per year
       this.marketDefinition.marketBaseData.underlyingParts.name + '\0' +
       this.marketDefinition.marketBaseData.underlyingParts.unit
     ];
@@ -102,12 +102,11 @@
     if (! db.isRunning())
       return Promise.resolve();
 
-    return db.dbTables['market'].insertOrIgnore('main', {marketDefinition: self.marketDefinition})
+    return db.dbTables['market'].insertOrIgnore('main', {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription})
       .then(function(){
         // TODO move/duplicate
         var underlyingStringHex = web3.utils.utf8ToHex(self.marketDefinition.marketBaseData.underlyingString);
-        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.marketDefinition.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
-        console.log('filename:', filename);
+        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.contractDescription.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
 
         return db.run('attach database "' + filename + '" as ' + dbname + ';'); // TODO escape?
       })
@@ -115,20 +114,19 @@
         return db.setupSchema(dbname); // TODO
       })
       .then(function(){
-        return db.dbTables['market'].insertOrIgnore(dbname, {marketDefinition: self.marketDefinition});
+        return db.dbTables['market'].insertOrIgnore(dbname, {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription});
       })
       .then(function(){
         return db.get(
-          'SELECT marketID from ' + db.quote(dbname, 'market') + ' WHERE "marketDefinition_network"=(?) and "marketDefinition_marketsAddr"=(?) and "marketDefinition_marketHash"=(?);',
+          'SELECT marketID from ' + db.quote(dbname, 'market') + ' WHERE "marketDefinition_network"=(?) and "contractDescription_marketsAddr"=(?) and "marketDefinition_marketHash"=(?);',
           [
             self.marketDefinition.network,
-            self.marketDefinition.marketsAddr,
+            self.contractDescription.marketsAddr,
             self.marketDefinition.marketHash
           ]
         );
       })
       .then(function(result){
-        //console.log('marketID', result);
         // finally set self.dbname and self.marketID
         self.marketID = result.marketID;
         self.dbname = dbname;
@@ -151,7 +149,8 @@
     this.quote = quote;
   };
 
-  Trader.prototype.exec = function(blockHeader/*, liquidityAndPositions*/){
+  Trader.prototype.exec = function(blockHeader, cash, liquidity/*, positions*/){
+    var self = this;
     // TODO callback if finished
     //var self = this;
 
@@ -166,9 +165,7 @@
     ){
       infoStrings.push('no (or no recent) quote');
       this.infoStrings = infoStrings;
-      return {
-        orders: []
-      };
+      return; // TODO no insert
     }
     var currentSpotPrice = this.quote[quoteProvider.KeyValue];
     var secondsUntilExpiration = this.marketDefinition.marketBaseData.expiration - this.quote[quoteProvider.KeyTimestampMs]/1000;
@@ -194,15 +191,20 @@
     var blockExpires = blockNumber + update;
     */
 
+    var cashEth = parseInt(cash) / Math.pow(10, 18);
+    var liquidityEth = parseInt(liquidity) / Math.pow(10, 18);
+
     this.data = {
       dateMs: (new Date()).getTime(),
       volatility: this.volatility,
+      cashEth: cashEth,
+      liquidityEth: liquidityEth
     };
 
     this.infoStrings = infoStrings;
     this.errorStrings = errorStrings;
 
-    if ((! db.isRunning()) || (! this.dbname))
+    if ((! db.isRunning()) || (!self.dbname))
       return;
 
     db.dbTables['trader'].insertOrIgnore(
@@ -212,15 +214,15 @@
         // log everything that is required to render TraderView()
         traderProps: this.stateToProps()
       }
-    ).catch(function(/*err*/){
-      // ignore
+    ).catch(function(err){
+      console.log('failed to write to db:' + err);
     });
   };
 
   return {
     Trader: Trader,
     // export for testing purposes
-    underlyingToVolatility: underlyingToVolatility,
+    underlyingCoreData: underlyingCoreData,
     calcOptionIDToProbability: calcOptionIDToProbability
   };
 });

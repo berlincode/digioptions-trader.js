@@ -118,7 +118,7 @@ elm_navbar_text.appendChild(document.createTextNode('${versionString} / '));
 
 var span1 = document.createElement('span');
 span1.textContent = 'status: ';
-span1.setAttribute('class', 'hidden-xs');
+span1.setAttribute('class', 'd-none d-lg-inline');
 elm_navbar_text.appendChild(span1);
 
 var elm_status = document.createElement('span');
