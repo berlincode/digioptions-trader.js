@@ -95,6 +95,7 @@
       'ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ropsten']),
       'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
       'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
+      //'thundercore-testnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-testnet'])
     },
 
     /* debug setting */
