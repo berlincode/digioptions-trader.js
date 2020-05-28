@@ -92,9 +92,9 @@
     contractAddresses: {
       // a list of contracts which are monitored
       'main': contractAddressesDefault(digioptionsTools.dataNetworks['main']),
-      'ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ropsten']),
-      'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
-      'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
+      'ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ropsten'])
+      //'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
+      //'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
       //'thundercore-testnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-testnet'])
     },
 
