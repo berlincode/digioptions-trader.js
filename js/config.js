@@ -36,8 +36,8 @@
     /* MarketMonitor settings */
     /**************************/
 
-    /* list networks that should be monitored (e.g. 'main', 'ropsten', ...) */
-    networks: ['main'], /* e.g. 'main', 'ropsten', etc */
+    /* list networks that should be monitored (e.g. 'ethereum-mainnet', 'ethereum-testnet-ropsten', ...) */
+    networks: ['ethereum-mainnet'], /* e.g. 'ethereum-mainnet', 'ethereum-testnet-ropsten', etc */
 
     /* list/try to start markets that are expired no more than 74 hours ago */
     marketsListExpiredSeconds: 74 * 60 * 60,
@@ -68,16 +68,22 @@
 
     /* Set account(s) for each network via the private key. */
     privateKeys: {
-      'main': [
+      'ethereum-mainnet': [
         //'0x<your-private-key>',
       ],
-      'ropsten': [
+      'ethereum-testnet-ropsten': [
         //'0x<your-private-key>',
       ],
-      'kovan': [
+      'ethereum-testnet-kovan': [
         //'0x<your-private-key>',
       ],
-      'rinkeby': [
+      'ethereum-testnet-rinkeby': [
+        //'0x<your-private-key>',
+      ],
+      'thundercore-mainnet': [
+        //'0x<your-private-key>',
+      ],
+      'thundercore-testnet': [
         //'0x<your-private-key>',
       ]
     },
@@ -91,10 +97,12 @@
 
     contractAddresses: {
       // a list of contracts which are monitored
-      'main': contractAddressesDefault(digioptionsTools.dataNetworks['main']),
-      'ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ropsten']),
-      'kovan': contractAddressesDefault(digioptionsTools.dataNetworks['kovan']),
-      'rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['rinkeby'])
+      'ethereum-mainnet': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-mainnet']),
+      'ethereum-testnet-ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-ropsten']),
+      'ethereum-testnet-kovan': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-kovan']),
+      'ethereum-testnet-rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-rinkeby']),
+      'thundercore-mainnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-mainnet']),
+      'thundercore-testnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-testnet'])
     },
 
     /* debug setting */

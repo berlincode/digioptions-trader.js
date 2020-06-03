@@ -35,6 +35,7 @@
 
   var getDigioptionsUrl = digioptionsTools.dataNetworksUtils.getDigioptionsUrl;
   var getEtherscanUrlContract = digioptionsTools.dataNetworksUtils.getEtherscanUrlContract;
+  var getExplorerUrlAddress = digioptionsTools.dataNetworksUtils.getExplorerUrlAddress;
   var getXmppPubsubViewerUrl = digioptionsTools.dataNetworksUtils.getXmppPubsubViewerUrl;
 
   function MarketViewMessages() {
@@ -169,16 +170,16 @@
 
     self.render = function(){
 
-      var url_market = getDigioptionsUrl('pageMarket', {
+      var urlMarket = getDigioptionsUrl('pageMarket', {
         network: self.props.marketDefinition.network,
         contractAddr: self.props.contractDescription.marketsAddr,
         marketHash: self.props.marketDefinition.marketHash}
       );
-      var url_contract = getEtherscanUrlContract(
+      var explorerUrlContract = getExplorerUrlAddress(
         self.props.marketDefinition.network,
         self.props.contractDescription.marketsAddr
       );
-      var url_pubsub_viewer = getXmppPubsubViewerUrl(
+      var urlPubsubViewer = getXmppPubsubViewerUrl(
         self.props.marketDefinition.network,
         self.props.contractDescription.marketsAddr,
         self.props.marketDefinition.marketHash
@@ -187,19 +188,19 @@
       return (
         React.createElement(React.Fragment, null,
           React.createElement('div', {className: 'card-header'},
-            (url_contract?
-              React.createElement('a', {href: url_contract},
+            ((explorerUrlContract && (explorerUrlContract.length > 0))?
+              React.createElement('a', {href: explorerUrlContract[0].urlAddress},
                 self.props.contractDescription.marketsAddr.substr(0,12) + '...'
               )
               :
               self.props.contractDescription.marketsAddr.substr(0,12) + '...'
             ),
             ' | "' + self.props.marketDefinition.marketBaseData.underlyingString + '" | ',
-            React.createElement('a', {href: url_market},
+            React.createElement('a', {href: urlMarket},
               'view market'
             ),
             ' | ',
-            React.createElement('a', {href: url_pubsub_viewer},
+            React.createElement('a', {href: urlPubsubViewer},
               'pubsub viewer'
             )
           ),

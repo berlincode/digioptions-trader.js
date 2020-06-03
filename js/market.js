@@ -423,6 +423,7 @@
 
     self.contract.methods.getLiquidityAndPositions(self.marketDefinition.marketHash).call({from: self.account? self.account.address: null}) // (bytes32 marketHash)
       .then(function(liquidityAndPositions){
+        //console.log('x', liquidityAndPositions);
         self.trader.exec(
           {
             number: self.blockHeader.number,
@@ -434,7 +435,7 @@
         );
       })
       .catch(function(error){
-        console.log('getLiquidityAndPositions error for ' + this.marketDefinition.marketBaseData.underlyingString + ':', error);
+        console.log('getLiquidityAndPositions error for ' + self.marketDefinition.marketBaseData.underlyingString + ':', error);
       });
 
     this.updateUI();

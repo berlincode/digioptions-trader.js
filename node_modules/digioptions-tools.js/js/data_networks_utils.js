@@ -84,19 +84,38 @@
     return url;
   }
 
-  function getEtherscanUrlContract(network, contractAddr){
+  function getExplorerUrlAddress(network, contractAddr){
     var dataNetwork = dataNetworks[network];
-    if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.etherscanAddressUrl) === 'undefined'))
+    if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.explorer) === 'undefined'))
       return null;
-    return dataNetwork.etherscanAddressUrl.
-      replace('{contractAddr}', normalizeContractAddr(contractAddr));
+    var explorers = [];
+    for (var idx in dataNetwork.explorer){
+      var explorer = dataNetwork.explorer[idx];
+      if (explorer.urlAddress){
+        explorers.push({
+          name: explorer.name,
+          urlAddress: explorer.urlAddress.replace('{contractAddr}', normalizeContractAddr(contractAddr))
+        });
+      }
+    }
+    return explorers;
   }
 
-  function getEtherscanUrlTx(network, tx){
+  function getExplorerUrlTx(network, tx){
     var dataNetwork = dataNetworks[network];
-    if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.etherscanTxUrl) === 'undefined'))
+    if ((typeof(dataNetwork) === 'undefined') || (typeof(dataNetwork.explorer) === 'undefined'))
       return null;
-    return dataNetwork.etherscanTxUrl.replace('{tx}', tx);
+    var explorers = [];
+    for (var idx in dataNetwork.explorer){
+      var explorer = dataNetwork.explorer[idx];
+      if (explorer.urlTx){
+        explorers.push({
+          name: explorer.name,
+          urlTx: explorer.urlTx.replace('{tx}', tx)
+        });
+      }
+    }
+    return explorers;
   }
 
   function getXmppUrlsWebsocket(network){
@@ -137,17 +156,41 @@
     return dataNetwork.xmppJidPassword;
   }
 
-  function getProvider(network, providerArgs){
+  function getProviderRPC(network, providerArgs){
     var dataNetwork = dataNetworks[network];
-    if (dataNetwork.ethProvider.indexOf('{infuraApiKey}') < 0)
-      return dataNetwork.ethProvider;
+    if (dataNetwork.ethProviderRPC.indexOf('{infuraApiKey}') < 0)
+      return dataNetwork.ethProviderRPC;
 
     if (! providerArgs.infuraApiKey){
       throw new Error('providerArgs.infuraApiKey not set');
     }
 
-    return dataNetwork.ethProvider.
+    return dataNetwork.ethProviderRPC.
       replace('{infuraApiKey}', providerArgs.infuraApiKey);
+  }
+
+
+  function getProvider(network, providerArgs){
+    var dataNetwork = dataNetworks[network];
+    if (dataNetwork.ethProviderWs.indexOf('{infuraApiKey}') < 0)
+      return dataNetwork.ethProviderWs;
+
+    if (! providerArgs.infuraApiKey){
+      throw new Error('providerArgs.infuraApiKey not set');
+    }
+
+    return dataNetwork.ethProviderWs.
+      replace('{infuraApiKey}', providerArgs.infuraApiKey);
+  }
+
+  function getNetworkByNetId(netId){
+    for (var network in dataNetworks){
+      var dataNetwork = dataNetworks[network];
+      if (dataNetwork.netId === netId){
+        return network;
+      }
+    }
+    return null;
   }
 
   return {
@@ -156,12 +199,14 @@
     digioptionsUrlNameToData: dataDigioptions,
     getDigioptionsUrl: getDigioptionsUrl,
     getXmppPubsubViewerUrl: getXmppPubsubViewerUrl,
-    getEtherscanUrlContract: getEtherscanUrlContract,
-    getEtherscanUrlTx: getEtherscanUrlTx,
+    getExplorerUrlAddress: getExplorerUrlAddress,
+    getExplorerUrlTx: getExplorerUrlTx,
     getXmppUrlsWebsocket: getXmppUrlsWebsocket,
     getXmppUrlsHttpBind: getXmppUrlsHttpBind,
     getXmppPubsubNodePath: getXmppPubsubNodePath,
     getXmppJidPassword: getXmppJidPassword,
-    getProvider: getProvider
+    getProviderRPC: getProviderRPC,
+    getProvider: getProvider,
+    getNetworkByNetId: getNetworkByNetId
   };
 });
