@@ -74,6 +74,7 @@
   ){
     this.marketDefinition = marketDefinition;
     this.contractDescription = contractDescription;
+    this.dataNetwork = digioptionsTools.dataNetworks[marketDefinition.network];
 
     this.volatility = underlyingCoreData[ // per year
       this.marketDefinition.marketBaseData.underlyingParts.name + '\0' +
