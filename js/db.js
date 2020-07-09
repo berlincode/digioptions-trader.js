@@ -21,7 +21,7 @@
   } else {
     // Global (browser)
     root.db = factory(
-      root.web3
+      root.Web3
       // no db
     );
   }

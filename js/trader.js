@@ -25,7 +25,7 @@
   } else {
     // Global (browser)
     root.trader = factory(
-      root.web3,
+      root.Web3,
       root.digioptionsTools,
       root.db,
       root.gaussian,

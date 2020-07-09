@@ -32,7 +32,7 @@
       root.factsigner,
       root.digioptionsContracts,
       root.digioptionsTools,
-      root.web3,
+      root.Web3,
       root.market
       //root.db
     );

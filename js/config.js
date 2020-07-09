@@ -18,7 +18,7 @@
   } else {
     // Global (browser)
     root.config = factory(
-      root.web3,
+      root.Web3,
       root.digioptionsTools
     );
   }

@@ -14,14 +14,14 @@
     "postinstall": "patch-package"
   },
   "files": [
-    "js/babel-polyfill.js",
+    "js/babel-polyfill.min.js",
     "js/config.js",
     "js/db.js",
     "js/gaussian.js",
     "js/main.js",
     "js/market.js",
     "js/trader.js",
-    "js/url-polyfill.js",
+    "js/url-polyfill.min.js",
     "js/web3-utils.min.js",
     "js/web3.min.js",
     "js/eth-lib-account.min.js",
@@ -59,7 +59,7 @@
     "react-dom": "~16.13.0",
     "requirejs": "2.3.6",
     "sqlite3": "^4.1.0",
-    "web3": "2.0.0-alpha.1",
+    "web3": "~1.2.9",
     "ws": "^7.0.0"
   },
   "devDependencies": {

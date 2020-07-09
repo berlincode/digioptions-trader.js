@@ -37,7 +37,7 @@ var clientRequireConfig = {
     'data_digioptions': 'node_modules/digioptions-tools.js/js/data_digioptions',
     'data_networks_utils': 'node_modules/digioptions-tools.js/js/data_networks_utils',
     'data_config': 'node_modules/digioptions-tools.js/js/data_config',
-    'xhr-request-promise': 'node_modules/digioptions-tools.js/js/xhr-request-promise',
+    'xhr-request-promise': 'node_modules/digioptions-tools.js/js/xhr-request-promise.min',
     'quote_provider': 'node_modules/digioptions-tools.js/js/quote_provider',
     'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
 
