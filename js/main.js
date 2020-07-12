@@ -205,7 +205,7 @@
         //console.log('new market (real trigger)', key);
         var marketNew = new market.Market(
           self.updateUI.bind(self),
-          self.web3.eth.accounts.wallet.accounts[0], // default is to take the first account
+          self.web3.eth.accounts.wallet[0], // default is to take the first account
           marketDefinition,
           contractDescriptionReduced,
           data,
