@@ -93,33 +93,31 @@
     this.errorStrings = [];
 
     this.marketID = null; // database unique index
-    this.dbname = null;
+    this.dbMarket = null;
   };
 
   Trader.prototype.setup = function(){ // returns Promise
     var self = this;
-    var dbname = db.uniqueNameGet();
 
     if (! db.isRunning())
       return Promise.resolve();
 
-    return db.dbTables['market'].insertOrIgnore('main', {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription})
+    var underlyingStringHex = web3.utils.utf8ToHex(self.marketDefinition.marketBaseData.underlyingString);
+    var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.contractDescription.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
+
+    return db.dbTables['market'].insertOrIgnore(db.getHandle(), {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription})
       .then(function(){
         // TODO move/duplicate
-        var underlyingStringHex = web3.utils.utf8ToHex(self.marketDefinition.marketBaseData.underlyingString);
-        var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.contractDescription.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
-
-        return db.run('attach database "' + filename + '" as ' + dbname + ';'); // TODO escape?
+        return db.setupDatabase(filename);
       })
-      .then(function(){
-        return db.setupSchema(dbname); // TODO
-      })
-      .then(function(){
-        return db.dbTables['market'].insertOrIgnore(dbname, {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription});
+      .then(function(dbMarket){
+        self.dbMarket = dbMarket;
+        return db.dbTables['market'].insertOrIgnore(self.dbMarket, {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription});
       })
       .then(function(){
         return db.get(
-          'SELECT marketID from ' + db.quote(dbname, 'market') + ' WHERE "marketDefinition_network"=(?) and "contractDescription_marketsAddr"=(?) and "marketDefinition_marketHash"=(?);',
+          self.dbMarket,
+          'SELECT marketID from market WHERE "marketDefinition_network"=(?) and "contractDescription_marketsAddr"=(?) and "marketDefinition_marketHash"=(?);',
           [
             self.marketDefinition.network,
             self.contractDescription.marketsAddr,
@@ -128,11 +126,10 @@
         );
       })
       .then(function(result){
-        // finally set self.dbname and self.marketID
+        // finally set self.marketID
         self.marketID = result.marketID;
-        self.dbname = dbname;
       }).catch(function(err){
-        console.log('db error (' + dbname + '):', err);
+        console.log('db error (' + filename + '):', err);
       });
   };
 

@@ -437,7 +437,7 @@ var setup = function(dbFilename, versionString, httpRoot, clientSetupStr) {
   db.basedirSet('./');
   db.versionSet(versionString);
 
-  return db.setup()
+  return db.setup(db.basedirGet() + '/' + db.basenameGet())
     .then(function() {
       var port = argv.port || 8888;
       var host = argv.host || hostDefault;

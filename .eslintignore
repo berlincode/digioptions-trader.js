@@ -1,6 +1,10 @@
+/js/web3.js
 /js/web3.min.js
 /js/gaussian.js
 /js/babel-polyfill.js
+/js/babel-polyfill.min.js
 /js/url-polyfill.js
+/js/url-polyfill.min.js
+/js/eth-lib-account.js
 /js/eth-lib-account.min.js
 /node_modules/

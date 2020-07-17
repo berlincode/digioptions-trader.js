@@ -35,7 +35,6 @@
   var db = null;
   var sizeInBytes = null;
   var dbUserVersion = 11;
-  var uniqueID = 0;
   var dbTables = {};
   var version;
 
@@ -63,9 +62,9 @@
     return promisified;
   }
 
-  function get(sql, args){return promisify(db, db.get)(sql, args || []);}
-  function all(sql, args){return promisify(db, db.all)(sql, args || []);}
-  function run(sql, args){return promisify(db, db.run)(sql, args || []);}
+  function get(db, sql, args){return promisify(db, db.get)(sql, args || []);}
+  function all(db, sql, args){return promisify(db, db.all)(sql, args || []);}
+  function run(db, sql, args){return promisify(db, db.run)(sql, args || []);}
 
   var validRegExp = new RegExp('^[a-zA-Z0-9_]+$');
   function quote(){
@@ -165,16 +164,17 @@
     this.warnedKeys = {};
   };
 
-  DBTable.prototype.create = function(dbname){
+  DBTable.prototype.create = function(db){
     return run(
-      'CREATE TABLE IF NOT EXISTS ' + quote(dbname, this.tableName) + ' (' +
+      db,
+      'CREATE TABLE IF NOT EXISTS ' + this.tableName + ' (' +
       (this.columns.map(function(column){return quote(column.name) + ' ' + column.datatype;}).join(', ')) +
       this.sqlCreateTableExtra +
       ');'
     );
   };
 
-  DBTable.prototype.insert = function(dbname, dataDict, command){
+  DBTable.prototype.insert = function(db, dataDict, command){
     var self = this;
 
     command = command || 'INSERT';
@@ -204,7 +204,7 @@
     var columns = self.columns.filter(function(col){return col.name in dataDictFlattend;});
 
     var sql = (
-      command + ' INTO ' + quote(dbname, self.tableName) + ' (' + // this does not change primary key marketID
+      command + ' INTO ' + self.tableName + ' (' + // this does not change primary key marketID
       (columns.map(function(column){return quote(column.name);}).join(', ')) +
       ') VALUES (' +
       (columns.map(function(column){return isDatatypeJson(column.datatype)? 'json(?)' : '(?)';}).join(', ')) +
@@ -213,30 +213,30 @@
 
     var values = columns.map(function(column){
       return column.encode? column.encode(dataDictFlattend[column.name]) : dataDictFlattend[column.name];});
-    return run(sql, values);
+    return run(db, sql, values);
   };
 
-  DBTable.prototype.insertOrIgnore = function(dbname, dataDict){
-    return this.insert(dbname, dataDict, 'INSERT OR IGNORE');
+  DBTable.prototype.insertOrIgnore = function(db, dataDict){
+    return this.insert(db, dataDict, 'INSERT OR IGNORE');
   };
 
-  DBTable.prototype.insertOrReplace = function(dbname, dataDict){
-    return this.insert(dbname, dataDict, 'INSERT OR REPLACE');
+  DBTable.prototype.insertOrReplace = function(db, dataDict){
+    return this.insert(db, dataDict, 'INSERT OR REPLACE');
   };
 
-  //  DBTable.prototype.insertOrUpdate = function(dbname, dataDict){
+  //  DBTable.prototype.insertOrUpdate = function(db, dataDict){
   //    return (
-  //      this.insert(dbname, dataDict, 'INSERT OR REPLACE')
+  //      this.insert(db, dataDict, 'INSERT OR REPLACE')
   //      .then(function(){
   //        return );
-  //      this.insert(dbname, dataDict, 'INSERT OR REPLACE')
+  //      this.insert(db, dataDict, 'INSERT OR REPLACE')
   //    );
   //  };
   //'INSERT OR REPLACE INTO '
   //'INSERT OR IGNORE'
 
-  DBTable.prototype.addColumn = function(dbname, column, ignoreExistsError){
-    return run('ALTER TABLE ' + quote(dbname, this.tableName) + ' ADD COLUMN ' + quote(column.name) + ' ' + column.datatype + ';')
+  DBTable.prototype.addColumn = function(db, column, ignoreExistsError){
+    return run(db, 'ALTER TABLE ' + this.tableName + ' ADD COLUMN ' + quote(column.name) + ' ' + column.datatype + ';')
       .catch(function(error) {
         if(
           ignoreExistsError &&
@@ -248,18 +248,18 @@
       });
   };
 
-  DBTable.prototype.addColumns = function(dbname, columns, ignoreExistsError){
+  DBTable.prototype.addColumns = function(db, columns, ignoreExistsError){
     var self = this;
     return columns.reduce(function(previousPromise, nextID) {
       return previousPromise.then(function() {
-        return self.addColumn(dbname, nextID, ignoreExistsError);
+        return self.addColumn(db, nextID, ignoreExistsError);
       });
     }, Promise.resolve());
   };
 
-  DBTable.prototype.addAllJsonColumns = function(dbname){
+  DBTable.prototype.addAllJsonColumns = function(db){
     var ignoreExistsError = true;
-    return this.addColumns(dbname, this.columns, ignoreExistsError);
+    return this.addColumns(db, this.columns, ignoreExistsError);
   };
 
   DBTable.prototype.unflattenFromDict = function(rowDict){
@@ -345,15 +345,15 @@
   ];
 
   function updateSize(){
-    get('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
+    get(db, 'SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
       .then(function(result){
         sizeInBytes = result.size;
       });
   }
 
-  function setupSchema(dbname){
+  function setupSchema(db){
     // check user_version
-    return get('PRAGMA ' + dbname + '.user_version;')
+    return get(db, 'PRAGMA user_version;')
       .then(function(dict) {
         if (dict.user_version === dbUserVersion)
           return Promise.resolve();
@@ -361,17 +361,17 @@
         console.log('Need to setup/reset database');
         var commands = [
           // drop all tables / indexes / triggers
-//          'PRAGMA ' + dbname + '.writable_schema = 1;',
-//          'DELETE FROM ' + dbname + '.sqlite_master WHERE type IN ("table", "index", "trigger");',
-//          'PRAGMA ' + dbname + '.writable_schema = 0;',
+          //'PRAGMA writable_schema = 1;',
+          //'DELETE FROM sqlite_master WHERE type IN ("table", "index", "trigger");',
+          //'PRAGMA .writable_schema = 0;',
           // free space
-          //'VACUUM ' + dbname + ';',
+          //'VACUUM;',
           // update user_version (as last thing)
-          'PRAGMA ' + dbname + '.user_version = ' + dbUserVersion + ';'
+          'PRAGMA user_version = ' + dbUserVersion + ';'
         ];
         return commands.reduce(function(previousPromise, sql) {
           return previousPromise.then(function() {
-            return run(sql);
+            return run(db, sql);
           });
         }, Promise.resolve());
       })
@@ -380,9 +380,9 @@
         return Object.values(dbTables).reduce(function(previousPromise, table) {
           return previousPromise.then(function() {
             // create table and add to add columns if already exists
-            return table.create(dbname)
+            return table.create(db)
               .then(function() {
-                return table.addAllJsonColumns(dbname);
+                return table.addAllJsonColumns(db);
               });
           });
         }, Promise.resolve());
@@ -391,12 +391,12 @@
         // execute all sqlCommandsExtra
         return sqlCommandsExtra.reduce(function(previousPromise, sql) {
           return previousPromise.then(function() {
-            return run(sql);
+            return run(db, sql);
           });
         }, Promise.resolve());
       })
       .then(function() {
-        console.log('database setup successful: ' + dbname);
+        console.log('database setup successful');
         dbRunning = true;
         updateSize();
         setInterval(updateSize, 60*1000);
@@ -404,8 +404,14 @@
 
   }
 
-  function setup(mode /*optional*/){
-    var filename = basedir + '/' + basename;
+  function setup(filename, mode /*optional*/){
+    return setupDatabase(filename, mode)
+      .then(function(dbGlobal) {
+        db = dbGlobal;
+      });
+  }
+
+  function setupDatabase(filename, mode /*optional*/){
     console.log('try to setup database:', filename);
 
     // create DBTable instances
@@ -418,9 +424,10 @@
     }
 
     function closeDbAndExit() {
+      var db;
       console.log('Signal received.');
       if (db){
-        console.log('Closing database...');
+        console.log('Closing database... (' + filename + ')');
         db.close(function(err){
           if (err){
             console.log('ERROR closing database.', err);
@@ -442,10 +449,13 @@
       .then(function(db_) {
         db = db_;
         // check for json capabilities
-        return get('SELECT json(?)', JSON.stringify({ok:true}));
+        return get(db, 'SELECT json(?)', JSON.stringify({ok:true}));
       })
       .then(function(){
-        return setupSchema('main');
+        return setupSchema(db);
+      })
+      .then(function(){
+        return db;
       });
   }
 
@@ -463,6 +473,7 @@
 
   return {
     setup: setup,
+    setupDatabase: setupDatabase,
     createAsync: createAsync,
     promisify: promisify,
     setupSchema: setupSchema,
@@ -472,7 +483,6 @@
     basedirGet: function(){return basedir;},
     versionSet: function(ver){version=ver;},
     versionGet: function(){return version;},
-    uniqueNameGet: function(){return 'db' + uniqueID++;},
     getHandle: getHandle, // db handle
     isRunning: isRunning,
     size: size,
