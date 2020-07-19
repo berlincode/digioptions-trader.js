@@ -410,18 +410,18 @@
         db = dbGlobal;
       });
   }
+    
+  // create DBTable instances
+  for (var tableName in tableDefinitions){
+    dbTables[tableName] = new DBTable(
+      tableName,
+      tableDefinitions[tableName].jsonColumns,
+      tableDefinitions[tableName].sqlCreateTableExtra
+    );
+  }
 
   function setupDatabase(filename, mode /*optional*/){
     console.log('try to setup database:', filename);
-
-    // create DBTable instances
-    for (var tableName in tableDefinitions){
-      dbTables[tableName] = new DBTable(
-        tableName,
-        tableDefinitions[tableName].jsonColumns,
-        tableDefinitions[tableName].sqlCreateTableExtra
-      );
-    }
 
     function closeDbAndExit() {
       var db;
