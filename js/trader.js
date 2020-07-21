@@ -217,6 +217,13 @@
     });
   };
 
+  Trader.prototype.close = function(){
+    var self = this;
+    if (self.dbMarket){
+      db.close(self.dbMarket);
+    }
+  };
+
   return {
     Trader: Trader,
     // export for testing purposes

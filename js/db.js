@@ -192,12 +192,20 @@
 
     var dataDictFlattend = flatten(dataDict, self.columnByName);
     if (warnUnknownKeys){
-      for (var key in dataDictFlattend) {
+      var key;
+      for (key in dataDictFlattend) {
         if ((!(self.columnByName[key])) && (!self.warnedKeys[key])){
-          console.log('Warning: not storing key to database:', key);
+          console.log('Warning: not storing key to database(table="' + self.tableName + '"):', key);
           self.warnedKeys[key] = true; // remember this key and do not print warning again
         }
       }
+      /*
+      for (key in self.columnByName) {
+        if (!(dataDictFlattend[key])){
+          console.log('Warning: column not set on database insert (table="' + self.tableName + '"):', key);
+        }
+      }
+      */
     }
 
     // used columns
@@ -398,8 +406,8 @@
       .then(function() {
         console.log('database setup successful');
         dbRunning = true;
-        updateSize();
-        setInterval(updateSize, 60*1000);
+        //updateSize(); // TODO
+        //setInterval(updateSize, 60*1000);
       });
 
   }
@@ -420,34 +428,62 @@
     );
   }
 
+  var dbHandles = [];
+
+  function close(db) {
+    if (dbHandles.filter(function(el) { return el === db; }).length === 1){
+
+      dbHandles = dbHandles.filter(function(el) { return el !== db; });
+
+      return new Promise(function (resolve, reject) {
+        db.close(function (err) {
+          if (err) {
+            console.log('Error closing database:', err);
+            reject(err);
+          } else {
+            console.log('Closed database successfully.');
+            resolve();
+          }
+        });
+      });
+    }
+    console.log('WARNING: not closing unregistered db.');
+    return Promise.resolve();
+  }
+
+  function closeDbAndExit() {
+    console.log('Signal received.');
+
+    var promises = [];
+    for (var dbHandle of dbHandles){
+      promises.push(close(dbHandle));
+    }
+
+    Promise.allSettled(promises)
+      .then(function() {
+        console.log('All databases closed successfully.');
+        process.exit(0);
+      })
+      .catch(function(/*err*/) {
+        console.log('ERROR closing all databases.');
+        process.exit(0);
+      });
+  }
+  process.on('SIGTERM', closeDbAndExit);
+  process.on('SIGINT', closeDbAndExit);
+
   function setupDatabase(filename, mode /*optional*/){
     console.log('try to setup database:', filename);
 
-    function closeDbAndExit() {
-      var db;
-      console.log('Signal received.');
-      if (db){
-        console.log('Closing database... (' + filename + ')');
-        db.close(function(err){
-          if (err){
-            console.log('ERROR closing database.', err);
-          } else {
-            console.log('Closed database successfully.');
-          }
-          process.exit(0);
-        });
-      } else {
-        process.exit(0);
-      }
-    }
-    process.on('SIGTERM', closeDbAndExit);
-    process.on('SIGINT', closeDbAndExit);
+    var db = null;
+
     return createAsync(
       filename,
       mode || (sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE)
     )
       .then(function(db_) {
         db = db_;
+        dbHandles.push(db);
         // check for json capabilities
         return get(db, 'SELECT json(?)', JSON.stringify({ok:true}));
       })
@@ -473,6 +509,7 @@
 
   return {
     setup: setup,
+    close: close,
     setupDatabase: setupDatabase,
     createAsync: createAsync,
     promisify: promisify,
