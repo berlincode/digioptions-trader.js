@@ -36,6 +36,7 @@
   var sizeInBytes = null;
   var dbUserVersion = 11;
   var dbTables = {};
+  var dbHandles = [];
   var version;
 
   var warnUnknownKeys = true;
@@ -274,7 +275,9 @@
     var self = this;
     var row = {};
     Object.keys(rowDict).forEach(function(name){
-      row[name] = self.columnByName[name].decode? self.columnByName[name].decode(rowDict[name]) : rowDict[name];
+      if (self.columnByName[name]){
+        row[name] = self.columnByName[name].decode? self.columnByName[name].decode(rowDict[name]) : rowDict[name];
+      }
     });
     return unflatten(row);
   };
@@ -352,12 +355,14 @@
     'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketID", "traderProps_data_dateMs");'
   ];
 
+  /*
   function updateSize(){
     get(db, 'SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
       .then(function(result){
         sizeInBytes = result.size;
       });
   }
+  */
 
   function setupSchema(db){
     // check user_version
@@ -413,22 +418,20 @@
   }
 
   function setup(filename, mode /*optional*/){
+    // create DBTable instances
+    for (var tableName in tableDefinitions){
+      dbTables[tableName] = new DBTable(
+        tableName,
+        tableDefinitions[tableName].jsonColumns,
+        tableDefinitions[tableName].sqlCreateTableExtra
+      );
+    }
+
     return setupDatabase(filename, mode)
       .then(function(dbGlobal) {
         db = dbGlobal;
       });
   }
-    
-  // create DBTable instances
-  for (var tableName in tableDefinitions){
-    dbTables[tableName] = new DBTable(
-      tableName,
-      tableDefinitions[tableName].jsonColumns,
-      tableDefinitions[tableName].sqlCreateTableExtra
-    );
-  }
-
-  var dbHandles = [];
 
   function close(db) {
     if (dbHandles.filter(function(el) { return el === db; }).length === 1){
