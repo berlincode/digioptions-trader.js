@@ -427,6 +427,10 @@
       );
     }
 
+    // only nodejs
+    process.on('SIGTERM', closeDbAndExit);
+    process.on('SIGINT', closeDbAndExit);
+
     return setupDatabase(filename, mode)
       .then(function(dbGlobal) {
         db = dbGlobal;
@@ -472,8 +476,7 @@
         process.exit(0);
       });
   }
-  process.on('SIGTERM', closeDbAndExit);
-  process.on('SIGINT', closeDbAndExit);
+
 
   function setupDatabase(filename, mode /*optional*/){
     console.log('try to setup database:', filename);
