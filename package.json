@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -59,7 +59,7 @@
     "react-dom": "~16.13.0",
     "requirejs": "2.3.6",
     "sqlite3": "^5.0.0",
-    "web3": "1.2.9",
+    "web3": "1.3.0",
     "ws": "^7.0.0"
   },
   "devDependencies": {
