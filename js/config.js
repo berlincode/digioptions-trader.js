@@ -37,7 +37,7 @@
     /**************************/
 
     /* list networks that should be monitored (e.g. 'ethereum-mainnet', 'ethereum-testnet-ropsten', ...) */
-    networks: ['ethereum-mainnet', 'ethereum-testnet-ropsten', 'thundercore-testnet'],
+    networks: ['ethereum-mainnet', 'ethereum-testnet-ropsten', 'thundercore-mainnet', 'thundercore-testnet'],
 
     /* list/try to start markets that are expired no more than 74 hours ago */
     marketsListExpiredSeconds: 74 * 60 * 60,

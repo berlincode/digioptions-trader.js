@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -9,7 +9,7 @@
     "email": "elastic.code@gmail.com"
   },
   "scripts": {
-    "serve": "http-server . -a 127.0.0.1 -p 8888 -c-1",
+    "serve": "ws --hostname 127.0.0.1 --port 8888",
     "eslint": "eslint ./js/ ./*.html",
     "postinstall": "patch-package"
   },
@@ -66,7 +66,7 @@
     "eslint": "^7.1.0",
     "eslint-plugin-html": "^6.0.0",
     "eslint-plugin-ie11": "^1.0.0",
-    "http-server": "~0.12.0",
+    "local-web-server": "^4.2.1",
     "mocha": "^8.0.0"
   },
   "engine": {
