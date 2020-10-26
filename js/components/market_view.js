@@ -34,7 +34,6 @@
 })(this, function(React, factsignerConstants, digioptionsTools, utils, traderView){
 
   var getDigioptionsUrl = digioptionsTools.dataNetworksUtils.getDigioptionsUrl;
-  var getEtherscanUrlContract = digioptionsTools.dataNetworksUtils.getEtherscanUrlContract;
   var getExplorerUrlAddress = digioptionsTools.dataNetworksUtils.getExplorerUrlAddress;
   var getXmppPubsubViewerUrl = digioptionsTools.dataNetworksUtils.getXmppPubsubViewerUrl;
 

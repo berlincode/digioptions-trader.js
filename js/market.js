@@ -408,6 +408,9 @@
       self.timer = undefined;
     }
     */
+    if (self.trader){
+      self.trader.close();
+    }
     self.terminated = true;
     self.updateUI();
   };

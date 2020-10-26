@@ -37,7 +37,7 @@ var clientRequireConfig = {
     'data_digioptions': 'node_modules/digioptions-tools.js/js/data_digioptions',
     'data_networks_utils': 'node_modules/digioptions-tools.js/js/data_networks_utils',
     'data_config': 'node_modules/digioptions-tools.js/js/data_config',
-    'xhr-request-promise': 'node_modules/digioptions-tools.js/js/xhr-request-promise',
+    'xhr-request-promise': 'node_modules/digioptions-tools.js/js/xhr-request-promise.min',
     'quote_provider': 'node_modules/digioptions-tools.js/js/quote_provider',
     'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
 
@@ -437,7 +437,7 @@ var setup = function(dbFilename, versionString, httpRoot, clientSetupStr) {
   db.basedirSet('./');
   db.versionSet(versionString);
 
-  return db.setup()
+  return db.setup(db.basedirGet() + '/' + db.basenameGet())
     .then(function() {
       var port = argv.port || 8888;
       var host = argv.host || hostDefault;

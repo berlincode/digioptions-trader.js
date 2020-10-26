@@ -114,7 +114,7 @@
   };
 
   // push the data to the clients
-  PubSub.prototype.publish = function(data, marketsAddr, marketHash)
+  PubSub.prototype.publish = function(data, marketsAddr, marketHash, callback)
   {
     if (data.message === '') return;
 
@@ -134,7 +134,7 @@
     this.connection.pubsub.publish(
       pubsub_node_path,
       [{data: entry}],
-      function(data){return this.on_send(data);}.bind(this)
+      callback || function(data){return this.on_send(data);}.bind(this)
     );
     return true;
   };
