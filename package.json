@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -14,7 +14,6 @@
     "postinstall": "patch-package"
   },
   "files": [
-    "js/babel-polyfill.min.js",
     "js/config.js",
     "js/db.js",
     "js/gaussian.js",
@@ -55,11 +54,11 @@
     "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
     "patch-package": "~6.2.1",
-    "react": "~16.13.0",
-    "react-dom": "~16.13.0",
+    "react": "~17.0.0",
+    "react-dom": "~17.0.0",
     "requirejs": "2.3.6",
     "sqlite3": "^5.0.0",
-    "web3": "1.3.0",
+    "web3": "1.3.3",
     "ws": "^7.0.0"
   },
   "devDependencies": {

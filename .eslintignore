@@ -3,8 +3,6 @@
 /js/web3-utils.js
 /js/web3-utils.min.js
 /js/gaussian.js
-/js/babel-polyfill.js
-/js/babel-polyfill.min.js
 /js/url-polyfill.js
 /js/url-polyfill.min.js
 /js/eth-lib-account.js

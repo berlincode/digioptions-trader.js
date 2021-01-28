@@ -277,7 +277,7 @@
 
     var providerData = digioptionsTools.quoteProvider.getProviderDataFromUnderlyingParts(
       this.marketDefinition.marketBaseData.underlyingParts,
-      this.marketDefinition.marketBaseData.underlyingString
+      this.marketDefinition.marketBaseData.underlyingString // TODO is this required anymore
     );
     if (!providerData){
       self.marketMessageSet('notStarted', 'not started: no quotes available for ' + this.marketDefinition.marketBaseData.underlyingString);
