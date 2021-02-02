@@ -23,7 +23,7 @@ var clientRequireConfig = {
   paths: {
     'web3': 'js/web3.min',
     'web3-utils': 'js/web3-utils.min',
-    'eth-lib-account': 'js/eth-lib-account.min',
+    'eth-lib/lib/account': 'js/eth-lib-account.min',
 
     // following is imported from node_modules folder
     'react': 'node_modules/react/umd/react.production.min',
