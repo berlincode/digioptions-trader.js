@@ -37,7 +37,7 @@
     /**************************/
 
     /* list networks that should be monitored (e.g. 'ethereum-mainnet', 'ethereum-testnet-ropsten', ...) */
-    networks: ['ethereum-mainnet', 'ethereum-testnet-ropsten', 'thundercore-mainnet', 'thundercore-testnet'],
+    networks: ['ethereum-mainnet', 'ethereum-testnet-ropsten', 'thundercore-mainnet', 'thundercore-testnet', 'celo-alfajores'],
 
     /* list/try to start markets that are expired no more than 74 hours ago */
     marketsListExpiredSeconds: 74 * 60 * 60,
@@ -102,7 +102,8 @@
       'ethereum-testnet-kovan': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-kovan']),
       'ethereum-testnet-rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-rinkeby']),
       'thundercore-mainnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-mainnet']),
-      'thundercore-testnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-testnet'])
+      'thundercore-testnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-testnet']),
+      'celo-alfajores': contractAddressesDefault(digioptionsTools.dataNetworks['celo-alfajores'])
     },
 
     /* debug setting */
