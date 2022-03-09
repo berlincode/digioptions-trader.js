@@ -10,7 +10,7 @@
   },
   "scripts": {
     "serve": "ws --hostname 127.0.0.1 --port 8888",
-    "eslint": "eslint ./js/ ./*.html",
+    "eslint": "eslint *.cjs ./js/ ./*.html",
     "postinstall": "patch-package"
   },
   "files": [
@@ -53,20 +53,19 @@
     "factsigner": "git+https://github.com/berlincode/factsigner.git",
     "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
-    "patch-package": "~6.2.1",
+    "patch-package": "^6.2.1",
     "react": "~17.0.0",
     "react-dom": "~17.0.0",
     "requirejs": "2.3.6",
     "sqlite3": "^5.0.0",
-    "web3": "1.3.6",
+    "web3": "~1.6.0",
     "ws": "^7.0.0"
   },
   "devDependencies": {
-    "eslint": "^7.1.0",
+    "eslint": "^8.4.0",
     "eslint-plugin-html": "^6.0.0",
-    "eslint-plugin-ie11": "^1.0.0",
-    "local-web-server": "^4.2.1",
-    "mocha": "^8.0.0"
+    "local-web-server": "^5.0.0",
+    "mocha": "^9.0.0"
   },
   "engine": {
     "node": "10.6.0"
