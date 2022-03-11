@@ -195,10 +195,10 @@
           atomicOptionPayoutWeiExpBN: contractDescription.atomicOptionPayoutWeiExpBN,
           atomicOptionPayoutWeiBN: contractDescription.atomicOptionPayoutWeiBN,
           atomicOptionsPerFullOptionBN: contractDescription.atomicOptionsPerFullOptionBN,
-          blockNumberCreated: contractDescription.blockNumberCreated,
+          blockCreatedMarkets: contractDescription.blockCreatedMarkets,
           marketsAddr: contractDescription.marketsAddr,
           offerMaxBlocksIntoFuture: contractDescription.offerMaxBlocksIntoFuture,
-          timestampMarketsCreated: contractDescription.timestampMarketsCreated,
+          timestampCreatedMarkets: contractDescription.timestampCreatedMarkets,
           versionMarkets: contractDescription.versionMarkets
         };
 
@@ -252,22 +252,15 @@
         contractAddr
       );
 
-      contract.methods.getContractInfo().call()
-        .then(function(contractInfo) {
-          //console.log('contractInfo', contractInfo);
-
-          contractDescription = digioptionsContracts.contractInfoToContractDescription(
-            self.web3,
-            contractAddr,
-            contractInfo
-          );
+      digioptionsContracts.getContractDescription(self.web3, contract)
+        .then(function(contractDescription) {
 
           marketSearch = digioptionsContracts.marketSearchSetup(
             contractDescription,
             //digioptionsContracts.constants.marketIntervalsAll, /* marketIntervals */
             null, //expirationDatetimeEnd
-            self.blockHeader.timestamp
-            //null /* toBlock / optional */
+            self.blockHeader.timestamp,
+            self.blockHeader.number
             //options
           );
 
