@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.10.4",
+  "version": "0.11.0",
   "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -59,7 +59,7 @@
     "requirejs": "2.3.6",
     "sqlite3": "^5.0.0",
     "web3": "~1.7.0",
-    "ws": "^8.0.0"
+    "ws": "^7.0.0"
   },
   "devDependencies": {
     "eslint": "^8.4.0",
