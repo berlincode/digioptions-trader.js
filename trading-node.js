@@ -33,6 +33,7 @@ var clientRequireConfig = {
     'digioptions-tools.js': 'node_modules/digioptions-tools.js/js/index',
     'pubsub': 'node_modules/digioptions-tools.js/js/pubsub',
     'offer_normalize': 'node_modules/digioptions-tools.js/js/offer_normalize',
+    'provider_retry_wrapper': 'node_modules/digioptions-tools.js/js/provider_retry_wrapper',
     'data_networks': 'node_modules/digioptions-tools.js/js/data_networks',
     'data_digioptions': 'node_modules/digioptions-tools.js/js/data_digioptions',
     'data_networks_utils': 'node_modules/digioptions-tools.js/js/data_networks_utils',
@@ -41,8 +42,8 @@ var clientRequireConfig = {
     'quote_provider': 'node_modules/digioptions-tools.js/js/quote_provider',
     'strophe.pubsub': 'node_modules/digioptions-tools.js/js/strophe.pubsub',
 
-    'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/js/digioptions_markets_abi',
-    'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/js/digioptions_market_lister_abi'
+    'digioptions_markets_abi': 'node_modules/digioptions-contracts.js/dist/umd/digioptions_markets_abi',
+    'digioptions_market_lister_abi': 'node_modules/digioptions-contracts.js/dist/umd/digioptions_market_lister_abi'
   },
   packages: [
     {
@@ -53,7 +54,7 @@ var clientRequireConfig = {
     {
       name: 'digioptions-contracts.js',
       location: 'node_modules/digioptions-contracts.js',
-      main: 'js/index.js'
+      main: 'dist/cjs/index.js'
     }
   ]
 };
