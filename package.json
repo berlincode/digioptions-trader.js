@@ -21,6 +21,7 @@
     "js/market.js",
     "js/trader.js",
     "js/url-polyfill.min.js",
+    "js/web3-core-method.min.js",
     "js/web3-utils.min.js",
     "js/web3.min.js",
     "js/eth-lib-account.min.js",
