@@ -20,14 +20,30 @@
   // * 'ethereum-testnet-goerli'
   // * 'thundercore-mainnet'
   // * 'thundercore-testnet'
+  // * 'celo-alfajores'
+
+
+  // see also: 
+  // interface AddEthereumChainParameter {
+  //   chainId: '0x' + network.chainId.toString(16);; // A 0x-prefixed hexadecimal string
+  //   chainName: network.name;
+  //   nativeCurrency: {
+  //     name: network.currencyName;
+  //     symbol: network.currencySymbol; // 2-6 characters long
+  //     decimals: 18;
+  //   };
+  //   rpcUrls: string[];
+  //   blockExplorerUrls?: string[];
+  // }
 
   return {
 
     'ethereum-mainnet': {
       name: 'Ethereum Mainnet',
       description: 'Main network',
-      currencyNameFull: 'Ether',
-      currencyNameShort: 'Eth',
+      currencyName: 'Ether',
+      currencySymbol: 'Eth', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: false,
       public: true,
       blockTimeApproxMs: 13500,
@@ -57,14 +73,15 @@
       ethProviderRPC: 'https://mainnet.infura.io/v3/{infuraApiKey}',
       ethProviderWs: 'wss://mainnet.infura.io/ws/v3/{infuraApiKey}', // for WebsocketProvider
       netId: 1,
-      chainId: null
+      chainId: 1
     },
 
     'ethereum-testnet-ropsten': {
       name: 'Ethereum Testnet Ropsten',
       description: 'Test network',
-      currencyNameFull: 'Ether',
-      currencyNameShort: 'Eth',
+      currencyName: 'Ether',
+      currencySymbol: 'Eth', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: true,
       public: true,
       blockTimeApproxMs: 13500,
@@ -94,14 +111,15 @@
       ethProviderRPC: 'https://ropsten.infura.io/v3/{infuraApiKey}',
       ethProviderWs: 'wss://ropsten.infura.io/ws/v3/{infuraApiKey}', // for WebsocketProvider
       netId: 3,
-      chainId: null
+      chainId: 3
     },
 
     'ethereum-testnet-kovan': {
       name: 'Ethereum Testnet Kovan',
       description: 'Proof-of-authority test network',
-      currencyNameFull: 'Ether',
-      currencyNameShort: 'Eth',
+      currencyName: 'Ether',
+      currencySymbol: 'Eth', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: true,
       public: true,
       blockTimeApproxMs: 8000,
@@ -126,14 +144,15 @@
       ethProviderRPC: 'https://kovan.infura.io/v3/{infuraApiKey}',
       ethProviderWs: 'wss://kovan.infura.io/ws/v3/{infuraApiKey}', // for WebsocketProvider
       netId: 42,
-      chainId: null
+      chainId: 42
     },
 
     'ethereum-testnet-rinkeby': {
       name: 'Ethereum Testnet Rinkeby',
       description: 'Clique-consensus test network',
-      currencyNameFull: 'Ether',
-      currencyNameShort: 'Eth',
+      currencyName: 'Ether',
+      currencySymbol: 'Eth', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: true,
       public: true,
       blockTimeApproxMs: 15000,
@@ -158,14 +177,15 @@
       ethProviderRPC: 'https://rinkeby.infura.io/v3/{infuraApiKey}',
       ethProviderWs: 'wss://rinkeby.infura.io/ws/v3/{infuraApiKey}', // for WebsocketProvider
       netId: 4,
-      chainId: null
+      chainId: 4
     },
 
     'ethereum-testnet-goerli': {
       name: 'Ethereum Testnet Goerli',
       description: 'Cross-client proof-of-authority test network',
-      currencyNameFull: 'Ether',
-      currencyNameShort: 'Eth',
+      currencyName: 'Ether',
+      currencySymbol: 'Eth', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: true,
       public: true,
       blockTimeApproxMs: 15000,
@@ -190,14 +210,15 @@
       ethProviderRPC: 'https://goerli.infura.io/v3/{infuraApiKey}',
       ethProviderWs: 'wss://goerli.infura.io/ws/v3/{infuraApiKey}', // for WebsocketProvider
       netId: 5,
-      chainId: null
+      chainId: 5
     },
 
     'thundercore-mainnet': {
       name: 'ThunderCore Mainnet',
       description: 'ThunderCore Mainnet', // TODO
-      currencyNameFull: 'Thunder Token',
-      currencyNameShort: 'TT',
+      currencyName: 'Thunder Token',
+      currencySymbol: 'TT', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: false,
       public: true,
       blockTimeApproxMs: 1000,
@@ -227,14 +248,15 @@
       ethProviderRPC: 'https://mainnet-rpc.thundercore.com',
       ethProviderWs: 'wss://mainnet-ws.thundercore.com', // for WebsocketProvider
       netId: 108,
-      chainId: null
+      chainId: 108
     },
 
     'thundercore-testnet': {
       name: 'ThunderCore Testnet',
       description: 'ThunderCore Testnet', // TODO
-      currencyNameFull: 'Thunder Token',
-      currencyNameShort: 'TT',
+      currencyName: 'Thunder Token', 
+      currencySymbol: 'TT', // 2-6 characters long
+      currencyDecimals: 18,
       testnet: true,
       public: true,
       blockTimeApproxMs: 1000,
@@ -259,7 +281,40 @@
       ethProviderRPC: 'https://testnet-rpc.thundercore.com',
       ethProviderWs: 'wss://testnet-ws.thundercore.com', // for WebsocketProvider
       netId: 18,
-      chainId: null
+      chainId: 18
+    },
+
+    'celo-alfajores': {
+      name: 'Celo Alfajores Testnet',
+      description: 'Celo Alfajores Testnet', // TODO
+      currencyName: 'Celo Token',
+      currencySymbol: 'Celo', // 2-6 characters long
+      currencyDecimals: 18,
+      testnet: true,
+      public: true,
+      blockTimeApproxMs: 5000,
+      digioptionsBaseUrl: 'https://www.digioptions.com/redirect.html',
+      explorer: [
+        {
+          name: 'Alfajores Celo Exlporer',
+          urlAddress: 'https://alfajores-blockscout.celo-testnet.org/address/{contractAddr}/transactions',
+          urlTx: 'https://alfajores-blockscout.celo-testnet.org/tx/{tx}/internal_transactions'
+        }
+      ],
+      contractDescriptions: [
+        {addr: '0x0e43c6f201662882efad315e87bcf0445669877b', name: 'Celo Alfajores Test Contract', foreign: false}
+      ],
+      xmppUrlWebsocket: 'wss://celo-alfajores.xmpp.digioptions.com:{port}/websocket',
+      xmppUrlHttpBind: 'https://celo-alfajores.xmpp.digioptions.com:{port}/http-bind',
+      xmppPortsWebsocket: [5280],
+      xmppPortsHttpBind: [5280],
+      xmppPubsubNodePath: '/v1/celo-alfajores/{marketsAddr}/{marketHash}',
+      xmppJidPassword: ['anon@celo-alfajores.xmpp.digioptions.com', 'password'],
+      xmppPubsubViewer: 'https://berlincode.github.io/digioptions-tools.js/pubsub.html?network=celo-alfajores&marketsAddr={marketsAddr}&marketHash={marketHash}',
+      ethProviderRPC: 'https://alfajores-forno.celo-testnet.org',
+      ethProviderWs: 'wss://alfajores-forno.celo-testnet.org/ws', // for WebsocketProvider
+      netId: 44787,
+      chainId: 44787
     }
   };
 });

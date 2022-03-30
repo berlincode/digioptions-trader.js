@@ -134,16 +134,16 @@
 
     // catch errors
     try {
-      this.ws.on('error', function(){
-        console.log('quote_provider websocket error');
+      this.ws.on('error', function(err){
+        console.log('quote_provider websocket error: ' + err);
       });
     } catch(error){
       // pass
     }
     try {
-      this.ws.onerror(function(){
+      this.ws.onerror(function(err){
         // catch error
-        console.log('quote_provider websocket error');
+        console.log('quote_provider websocket error: ' + err);
       });
     } catch(error){
       // pass

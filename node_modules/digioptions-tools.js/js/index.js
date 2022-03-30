@@ -4,6 +4,7 @@
     // AMD
     define([
       './pubsub',
+      './provider_retry_wrapper',
       './offer_normalize',
       './data_networks',
       './data_networks_utils',
@@ -14,6 +15,7 @@
     // CommonJS (node and other environments that support module.exports)
     module.exports = factory(
       require('./pubsub'),
+      require('./provider_retry_wrapper'),
       require('./offer_normalize'),
       require('./data_networks'),
       require('./data_networks_utils'),
@@ -24,6 +26,7 @@
     // Global (browser)
     root.digioptionsTools = factory(
       root.PubSub,
+      root.providerRetryWrapper,
       root.offer_normalize,
       root.data_networks,
       root.data_networks_utils,
@@ -31,7 +34,7 @@
       root.quote_provider
     );
   }
-}(this, function (PubSub, offerNormalize, dataNetworks, dataNetworksUtils, dataConfig, quoteProvider) {
+}(this, function (PubSub, providerRetryWrapper, offerNormalize, dataNetworks, dataNetworksUtils, dataConfig, quoteProvider) {
 
   function padZero(i) {
     if (i < 10) {
@@ -95,6 +98,7 @@
 
   return {
     PubSub: PubSub,
+    providerRetryWrapper: providerRetryWrapper,
     offerNormalize: offerNormalize,
     dataNetworks: dataNetworks,
     dataNetworksUtils: dataNetworksUtils,

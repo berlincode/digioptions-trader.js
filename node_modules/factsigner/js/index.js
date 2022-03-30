@@ -4,7 +4,7 @@
     // AMD
     define([
       'web3-utils',
-      'eth-lib-account', // eth-lib/account
+      'eth-lib/lib/account',// 'eth-lib-account'
       './constants'
     ], factory);
   } else if (typeof module !== 'undefined' && module.exports) {

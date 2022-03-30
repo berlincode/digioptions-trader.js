@@ -9,7 +9,7 @@
  * MIT License
  * version 3.0.3 / ec2f025b66367f4ecb24ff39402695474e38f6a1
  *
- * modified to work direcly in browser
+ * modified to work directly in a browser
  * Ulf Bartel
  */
 
