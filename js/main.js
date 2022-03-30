@@ -142,10 +142,7 @@
   Monitor.prototype.setupMarket = function(contractDescription, marketHash){
     var self = this;
 
-    var contract = new self.web3.eth.Contract(
-      digioptionsContracts.digioptionsMarketsAbi(),
-      contractDescription.marketsAddr
-    );
+    var contract = contractDescription.contractMarkets;
 
     var key = marketHash.toLowerCase();
 
@@ -238,7 +235,7 @@
 
   };
 
-  Monitor.prototype.searchMarkets = function(timestamp){
+  Monitor.prototype.searchMarkets = function(){
     var self = this;
 
     config.contractAddresses[self.network].forEach(function (contractAddr){
@@ -246,30 +243,28 @@
       var contractDescription;
       //var contractMarketListerDetails = null;
 
-      // use any contract abi for calling getContractInfo()
-      var contract = new self.web3.eth.Contract(
-        digioptionsContracts.digioptionsMarketsAbi(),
-        contractAddr
-      );
-
-      digioptionsContracts.getContractDescription(self.web3, contract)
-        .then(function(contractDescription) {
+      digioptionsContracts.getContractInfo(self.web3, contractAddr)
+        .then(function(contractInfo) {
+          contractDescription = contractInfo;
 
           marketSearch = digioptionsContracts.marketSearchSetup(
             contractDescription,
-            //digioptionsContracts.constants.marketIntervalsAll, /* marketIntervals */
-            null, //expirationDatetimeEnd
             self.blockHeader.timestamp,
-            self.blockHeader.number
+            self.blockHeader.number,
             //options
+            {
+              // TODO limit to open markets
+              filterMarketIntervals: [ // TODO
+                factsigner.constants.marketInterval.DAILY,
+                factsigner.constants.marketInterval.WEEKLY,
+                factsigner.constants.marketInterval.MONTHLY,
+                //factsigner.constants.marketInterval.YEARLY
+              ],
+              limitPerFetch: 8,
+            }
           );
 
-          return digioptionsContracts.getMarketCreateEvents(
-            contractDescription,
-            marketSearch,
-            self.blockHeader.timestamp - 60*60*24*3 /* expirationDatetimeStart */
-            //limit /* optional */
-          );
+          return digioptionsContracts.getMarketCreateEvents(marketSearch);
         })
         .then(function(result) {
           var events = result[0];
@@ -277,7 +272,7 @@
           //console.log('events', events);
           var marketKeys = events.map(function(evt){return evt.returnValues.marketKey;});
           //console.log('marketKeys', contractAddr, marketKeys);
-          var contract = marketSearch.contractMarketLister || marketSearch.contractMarkets;
+          var contract = marketSearch.contract;
           return contract.methods.getMarketDataListByMarketKeys(addrZero, marketKeys)
             .call({});
         })
@@ -381,7 +376,7 @@
     // TODO remove
     if (!self.blockHeader){
       self.startSearchMarkets();
-      self.searchMarkets(blockHeader.timestamp);
+      self.searchMarkets();
     }
 
     else if (this.blockHeader.number !== blockHeader.number){
@@ -403,7 +398,7 @@
     setInterval(
       function(){
         self.deleteOldTerminatedMarkets();
-        self.searchMarkets(self.blockHeader.timestamp);
+        self.searchMarkets();
         self.checkExpired();
       },
       5 * 60 * 1000 /* every 5 minutes */
@@ -489,8 +484,8 @@
       for (var marketHash in self.markets){
         self.markets[marketHash].web3Connected(self.web3);
       }
-
     }
+
     function callbackDisconnect(){
       self.web3 = null;
       for (var marketHash in self.markets){

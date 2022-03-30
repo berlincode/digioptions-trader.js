@@ -93,8 +93,7 @@
     this.eventSubPositionChange0 = null;
     this.eventSubPositionChange1 = null;
 
-    this.positionChange0Callback = false;
-    this.positionChange1Callback = false;
+    this.positionChangeCallback = false;
   }
 
   Market.prototype.isReady = function(){
@@ -102,8 +101,7 @@
 
     return (
       self.contract &&
-      self.positionChange0Callback &&
-      self.positionChange1Callback 
+      self.positionChangeCallback
     );
   };
 
@@ -144,8 +142,7 @@
 
     self.contract = new web3.eth.Contract(digioptionsContracts.digioptionsMarketsAbi(), self.contractDescription.marketsAddr);
 
-    self.positionChange0Callback = false;
-    self.positionChange1Callback = false;
+    self.positionChangeCallback = false;
 
     function addEventPositionChange(evt, buy){
       if (self.positionChanges[evt.id])
@@ -169,44 +166,43 @@
       self.positionChanges[evt.id] = positionChange;
     }
 
-    self.contract.getPastEvents('PositionChange', {
-      filter: {
-        buyer: [self.account? self.account.address : '0x0'],
-        marketHash: [self.marketDefinition.marketHash]
-      },
-      fromBlock: 0,
-      toBlock: 'latest'
-    })
-      .then(function(events){
-        //console.log('PositionChange #0');
-        for (var idx in events){
-          addEventPositionChange(events[idx], true);
-        }
-        self.positionChange0Callback = true;
-        self.updateState();
+    web3.eth.getBlock('latest')
+      .then(function(blockHeader){
+        return digioptionsContracts.getPastEvents(
+          self.contract, // contract
+          self.contractDescription.blockCreatedMarkets, // fromBlock
+          blockHeader.number, // toBlock
+          [
+            [
+              'PositionChange', // eventName
+              {buyer: [self.account? self.account.address : '0x0'], marketHash: [self.marketDefinition.marketHash]}, // filter
+            ],
+            [
+              'PositionChange', // eventName
+              {seller: [self.account? self.account.address : '0x0'], marketHash: [self.marketDefinition.marketHash]}, // filter
+            ]
+          ],
+          { // options
+            timestampStop: self.marketDefinition.expiration - digioptionsContracts.marketStartMaxIntervalBeforeExpiration[self.marketDefinition.marketBaseData.marketInterval],
+          }
+        );
       })
-      .catch(function(error){
-        console.log('promise catch getPastEvents PositionChange #0', error); // TODO handle
-      });
+      .then(function(eventsList){
+        var eventsBuy = eventsList[0]; // result from the first eventNameAndFilter
+        var eventsSell = eventsList[1]; // result from the second eventNameAndFilter
 
-    self.contract.getPastEvents('PositionChange', {
-      filter: {
-        seller: [self.account? self.account.address : '0x0'],
-        marketHash: [self.marketDefinition.marketHash]
-      },
-      fromBlock: 0,
-      toBlock: 'latest'
-    })
-      .then(function(events){
-        //console.log('PositionChange #1');
-        for (var idx in events){
-          addEventPositionChange(events[idx], false);
+        var idx;
+        for (idx in eventsBuy){
+          addEventPositionChange(eventsBuy[idx], true);
         }
-        self.positionChange1Callback = true;
+        for (idx in eventsSell){
+          addEventPositionChange(eventsSell[idx], false);
+        }
+        self.positionChangeCallback = true;
         self.updateState();
       })
       .catch(function(error){
-        console.log('promise catch getPastEvents PositionChange #1', error); // TODO handle
+        console.log('promise catch getPastEvents PositionChange', error); // TODO handle
       });
 
     self.eventSubPositionChange0 = self.contract.events.PositionChange(
