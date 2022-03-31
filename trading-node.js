@@ -23,6 +23,7 @@ var clientRequireConfig = {
   paths: {
     'web3': 'js/web3.min',
     'web3-utils': 'js/web3-utils.min',
+    'web3-core-method': 'js/web3-core-method.min',
     'eth-lib/lib/account': 'js/eth-lib-account.min',
 
     // following is imported from node_modules folder
@@ -54,7 +55,7 @@ var clientRequireConfig = {
     {
       name: 'digioptions-contracts.js',
       location: 'node_modules/digioptions-contracts.js',
-      main: 'dist/cjs/index.js'
+      main: 'dist/umd/index.js'
     }
   ]
 };
