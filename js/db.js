@@ -37,7 +37,7 @@
   var dbUserVersion = 11;
   var dbTables = {};
   var dbHandles = [];
-  var version;
+  var strict = ''; // set to 'STRICT' for sqlite3 strict mode
 
   var warnUnknownKeys = true;
 
@@ -166,12 +166,22 @@
   };
 
   DBTable.prototype.create = function(db){
+    var datatype_to_sqlite_type = function(datatype){
+      if (datatype == 'json') {
+        return 'text';
+      }
+      if (datatype == 'boolean') {
+        return 'integer';
+      }
+      return datatype; 
+    };
+    var cmd = 'CREATE TABLE IF NOT EXISTS ' + this.tableName + ' (' +
+      (this.columns.map(function(column){return quote(column.name) + ' ' + datatype_to_sqlite_type(column.datatype);}).join(', ')) +
+      this.sqlCreateTableExtra +
+      ') ' + strict + ';';
     return run(
       db,
-      'CREATE TABLE IF NOT EXISTS ' + this.tableName + ' (' +
-      (this.columns.map(function(column){return quote(column.name) + ' ' + column.datatype;}).join(', ')) +
-      this.sqlCreateTableExtra +
-      ');'
+      cmd
     );
   };
 
@@ -179,17 +189,6 @@
     var self = this;
 
     command = command || 'INSERT';
-
-    if (self.columnByName.version && version) {
-      // if table has a version column we automatically set a default
-      dataDict = Object.assign(
-        {
-          // set a version default so that we may log the version too
-          version: version
-        },
-        dataDict
-      );
-    }
 
     var dataDictFlattend = flatten(dataDict, self.columnByName);
     if (warnUnknownKeys){
@@ -289,27 +288,24 @@
         //{'name': 'marketID', 'datatype': 'integer PRIMARY KEY AUTOINCREMENT'},
         {'name': 'marketID', 'datatype': 'integer PRIMARY KEY'},
 
-        {'name': 'marketDefinition_network', 'datatype': 'string'},
-        {'name': 'contractDescription_marketsAddr', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketHash', 'datatype': 'string'},
-        //{'name': 'marketDefinition_marketHash', 'datatype': 'string CHECK (typeof("marketDefinition_marketHash") = "string")'},
-
-        {'name': 'version', 'datatype': 'string'},
+        {'name': 'marketDefinition_network', 'datatype': 'text'},
+        {'name': 'contractDescription_marketsAddr', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketHash', 'datatype': 'text'},
 
         //{'name': 'marketDefinition_marketListerAddr', 'datatype': 'json', , encode: JSON.stringify, decode: JSON.parse}, // TODO
         {'name': 'marketDefinition_chainID', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") in ("integer", "null"))'}, // TODO remove NULL if chainIDs were added
         {'name': 'marketDefinition_marketBaseData_baseUnitExp', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_expiration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_expiration") = "integer")'},
-        {'name': 'marketDefinition_marketBaseData_underlyingParts_name', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_underlyingParts_unit', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_underlyingParts_marketplace', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_underlyingParts_provider', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_underlyingString', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_transactionFee0StringPercent', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_transactionFee1StringPercent', 'datatype': 'string'},
-        {'name': 'marketDefinition_marketBaseData_transactionFeeSignerStringPercent', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_name', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_unit', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_marketplace', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_underlyingParts_provider', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_underlyingString', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_transactionFee0StringPercent', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_transactionFee1StringPercent', 'datatype': 'text'},
+        {'name': 'marketDefinition_marketBaseData_transactionFeeSignerStringPercent', 'datatype': 'text'},
         {'name': 'marketDefinition_marketBaseData_ndigit', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_ndigit") = "integer")'},
-        {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'string'},
+        {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'text'},
         {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
         {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
         {'name': 'marketDefinition_marketBaseData_marketInterval', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
@@ -320,19 +316,30 @@
         {'name': 'contractDescription_versionMarkets_minor', 'datatype': 'integer CHECK (typeof("contractDescription_versionMarkets_minor") = "integer")'},
         {'name': 'contractDescription_versionMarkets_bugfix', 'datatype': 'integer CHECK (typeof("contractDescription_versionMarkets_bugfix") = "integer")'},
         {'name': 'contractDescription_offerMaxBlocksIntoFuture', 'datatype': 'integer CHECK (typeof("contractDescription_offerMaxBlocksIntoFuture") = "integer")'},
-        {'name': 'contractDescription_atomicOptionPayoutWeiExpBN', 'datatype': 'string', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
-        {'name': 'contractDescription_atomicOptionPayoutWeiBN', 'datatype': 'string', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
-        {'name': 'contractDescription_atomicOptionsPerFullOptionBN', 'datatype': 'string', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
+        {'name': 'contractDescription_atomicOptionPayoutWeiExpBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
+        {'name': 'contractDescription_atomicOptionPayoutWeiBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
+        {'name': 'contractDescription_atomicOptionsPerFullOptionBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
       ],
       sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
+    },
+    // table name = 'constants'
+    'constants': {
+      jsonColumns: [
+        //{'name': 'constantsID', 'datatype': 'integer PRIMARY KEY AUTOINCREMENT'},
+        {'name': 'constantsID', 'datatype': 'integer PRIMARY KEY'},
+
+        {'name': 'version', 'datatype': 'text'},
+        // add here your custom run-time constant data columns
+      ],
+      sqlCreateTableExtra: ', UNIQUE ("version", "version2") ON CONFLICT REPLACE'
     },
     // table name = 'trader'
     'trader': {
       jsonColumns: [
-        // foreign key
+        // foreign key to table market
         {'name': 'marketID', 'datatype': 'integer'},
-
-        {'name': 'version', 'datatype': 'string'},
+        // foreign key to table constants
+        {'name': 'constantsID', 'datatype': 'integer'},
 
         {'name': 'traderProps_quote_timestampMs', 'datatype': 'integer'},
         {'name': 'traderProps_quote_value', 'datatype': 'real'},
@@ -346,7 +353,10 @@
 
         // add here your custom data columns
       ],
-      sqlCreateTableExtra: ', CONSTRAINT marketID FOREIGN KEY (marketID) REFERENCES markets(marketID) ON UPDATE cascade ON DELETE cascade'
+      sqlCreateTableExtra: (
+        ', CONSTRAINT marketID FOREIGN KEY (marketID) REFERENCES markets(marketID) ON UPDATE cascade ON DELETE cascade' +
+        ', CONSTRAINT constantsID FOREIGN KEY (constantsID) REFERENCES constants(constantsID) ON UPDATE cascade ON DELETE cascade'
+      )
     }
   };
 
@@ -524,8 +534,7 @@
     basenameGet: function(){return basename;},
     basedirSet: function(dir){basedir=dir;},
     basedirGet: function(){return basedir;},
-    versionSet: function(ver){version=ver;},
-    versionGet: function(){return version;},
+    strictSet: function(strictString){strict=strictString;},
     getHandle: getHandle, // db handle
     isRunning: isRunning,
     size: size,
