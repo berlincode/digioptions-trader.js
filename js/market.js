@@ -149,7 +149,7 @@
         return;
 
       var positionChange = {
-        optionID: Number(evt.returnValues.optionID),
+        optionID: Number(evt.returnValues.optionID), // TODO Cannot read property 'optionID' of undefined
         size: web3.utils.toBN(evt.returnValues.size),
         pricePerOption: (
           buy?

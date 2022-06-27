@@ -331,7 +331,7 @@
         {'name': 'version', 'datatype': 'text'},
         // add here your custom run-time constant data columns
       ],
-      sqlCreateTableExtra: ', UNIQUE ("version", "version2") ON CONFLICT REPLACE'
+      sqlCreateTableExtra: ', UNIQUE ("version") ON CONFLICT REPLACE'
     },
     // table name = 'trader'
     'trader': {
