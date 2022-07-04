@@ -410,7 +410,7 @@ class Server {
 
     // now start all networks
     const main = require('./js/main.js');
-    core = new main.Core(contentUpdated);
+    core = new main.Core(contentUpdated, this.versionString);
     core.start();
   }
 
@@ -434,39 +434,30 @@ var printInterfaces = function(port, host) {
   }
 };
 
-var setup = function(dbFilename, versionString, httpRoot, clientSetupStr) {
-  db.basenameSet(dbFilename);
+var setup = function(versionString, httpRoot, clientSetupStr) {
   db.basedirSet('./');
-  db.versionSet(versionString);
 
-  return db.setup(db.basedirGet() + '/' + db.basenameGet())
-    .then(function() {
-      var port = argv.port || 8888;
-      var host = argv.host || hostDefault;
-      var server = new Server(
-        versionString,
-        httpRoot,
-        clientSetupStr,
-        port,
-        host
-      );
-      server.start();
-      printInterfaces(port, host);
-      console.log('setup finished. server running.');
-    })
-    .catch(function(err) {
-      console.log('sqlite error (main db):', err.message);
-    });
+  db.setup();
+  var port = argv.port || 8888;
+  var host = argv.host || hostDefault;
+  var server = new Server(
+    versionString,
+    httpRoot,
+    clientSetupStr,
+    port,
+    host
+  );
+  server.start();
+  printInterfaces(port, host);
+  console.log('setup finished. server running.');
 };
 
 if (require.main === module) {
 
   var pkg = require('./package.json');
-  var dbFilename = argv.db || 'trader.db';
 
   setup(
-    dbFilename,
-    pkg.version,
+    pkg.name + '-' + pkg.version,
     path.normalize(path.resolve(__dirname)),
     clientSetupStr
   );

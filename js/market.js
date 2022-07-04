@@ -66,7 +66,8 @@
     expired,
     blockHeaderInitial,
     offersPublish,
-    quoteProvider
+    quoteProvider,
+    versionString
   ){
     this.contentUpdated = contentUpdated;
     this.account = account;
@@ -77,6 +78,7 @@
     this.data = data;
     this.offersPublish = offersPublish;
     this.quoteProvider = quoteProvider;
+    this.versionString = versionString;
 
     this.counter = 0;
     this.pubsubMessageCount = 0;
@@ -148,6 +150,7 @@
       if (self.positionChanges[evt.id])
         return;
 
+      console.log('aaa evt', evt);
       var positionChange = {
         optionID: Number(evt.returnValues.optionID), // TODO Cannot read property 'optionID' of undefined
         size: web3.utils.toBN(evt.returnValues.size),
@@ -286,7 +289,8 @@
       this.trader = new trader.Trader(
         this.marketDefinition,
         this.contractDescription,
-        this.genOrder.bind(this)
+        this.genOrder.bind(this),
+        this.versionString
       );
     }catch(err) {
       //console.log('Market "' + this.marketDefinition.marketBaseData.underlyingString.replace(/\0/g,'/') + '" / ' + this.marketDefinition.marketHash + ' not started:', err);

@@ -30,10 +30,7 @@
   var web3 = new Web3();
 
   var dbRunning = false;
-  var basename = 'trader';
   var basedir = './';
-  var db = null;
-  var sizeInBytes = null;
   var dbUserVersion = 11;
   var dbTables = {};
   var dbHandles = [];
@@ -157,7 +154,7 @@
   ){
     this.tableName = tableName;
     this.columns = columns;
-    this.sqlCreateTableExtra = sqlCreateTableExtra || '';
+    this.sqlCreateTableExtra = sqlCreateTableExtra || function(){return '';};
     this.columnByName = columns.reduce(function(map, column) {
       map[column.name] = column;
       return map;
@@ -177,7 +174,7 @@
     };
     var cmd = 'CREATE TABLE IF NOT EXISTS ' + this.tableName + ' (' +
       (this.columns.map(function(column){return quote(column.name) + ' ' + datatype_to_sqlite_type(column.datatype);}).join(', ')) +
-      this.sqlCreateTableExtra +
+      this.sqlCreateTableExtra(this) +
       ') ' + strict + ';';
     return run(
       db,
@@ -185,10 +182,11 @@
     );
   };
 
-  DBTable.prototype.insert = function(db, dataDict, command){
+  DBTable.prototype.insertBase = function(db, dataDict, command, sqlAppend){
     var self = this;
 
     command = command || 'INSERT';
+    sqlAppend = sqlAppend || '';
 
     var dataDictFlattend = flatten(dataDict, self.columnByName);
     if (warnUnknownKeys){
@@ -216,32 +214,26 @@
       (columns.map(function(column){return quote(column.name);}).join(', ')) +
       ') VALUES (' +
       (columns.map(function(column){return isDatatypeJson(column.datatype)? 'json(?)' : '(?)';}).join(', ')) +
-      ')'
+      ')' +
+      sqlAppend
     );
 
     var values = columns.map(function(column){
       return column.encode? column.encode(dataDictFlattend[column.name]) : dataDictFlattend[column.name];});
-    return run(db, sql, values);
+    return get(db, sql, values);
   };
 
-  DBTable.prototype.insertOrIgnore = function(db, dataDict){
-    return this.insert(db, dataDict, 'INSERT OR IGNORE');
+  DBTable.prototype.insert = function(db, dataDict, sqlAppend){
+    return this.insertBase(db, dataDict, 'INSERT', sqlAppend);
   };
 
-  DBTable.prototype.insertOrReplace = function(db, dataDict){
-    return this.insert(db, dataDict, 'INSERT OR REPLACE');
+  DBTable.prototype.insertOrIgnore = function(db, dataDict, sqlAppend){
+    return this.insertBase(db, dataDict, 'INSERT OR IGNORE', sqlAppend);
   };
 
-  //  DBTable.prototype.insertOrUpdate = function(db, dataDict){
-  //    return (
-  //      this.insert(db, dataDict, 'INSERT OR REPLACE')
-  //      .then(function(){
-  //        return );
-  //      this.insert(db, dataDict, 'INSERT OR REPLACE')
-  //    );
-  //  };
-  //'INSERT OR REPLACE INTO '
-  //'INSERT OR IGNORE'
+  DBTable.prototype.insertOrReplace = function(db, dataDict, sqlAppend){
+    return this.insertBase(db, dataDict, 'INSERT OR REPLACE', sqlAppend);
+  };
 
   DBTable.prototype.addColumn = function(db, column, ignoreExistsError){
     return run(db, 'ALTER TABLE ' + this.tableName + ' ADD COLUMN ' + quote(column.name) + ' ' + column.datatype + ';')
@@ -320,7 +312,9 @@
         {'name': 'contractDescription_atomicOptionPayoutWeiBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
         {'name': 'contractDescription_atomicOptionsPerFullOptionBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
       ],
-      sqlCreateTableExtra: ', UNIQUE ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash") ON CONFLICT REPLACE'
+      sqlCreateTableExtra: function(){return (
+        ', UNIQUE ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash")'
+      );}
     },
     // table name = 'constants'
     'constants': {
@@ -328,10 +322,16 @@
         //{'name': 'constantsID', 'datatype': 'integer PRIMARY KEY AUTOINCREMENT'},
         {'name': 'constantsID', 'datatype': 'integer PRIMARY KEY'},
 
-        {'name': 'version', 'datatype': 'text'},
+        {'name': 'constants_versionString', 'datatype': 'text'},
         // add here your custom run-time constant data columns
       ],
-      sqlCreateTableExtra: ', UNIQUE ("version") ON CONFLICT REPLACE'
+      sqlCreateTableExtra: function(table){
+        return (
+          ', UNIQUE (' + 
+          Object.keys(table.columnByName).filter(function(colName){return colName != 'constantsID';}).map(function(key){return '"'+key+'"';}).join(',') +
+          ')'
+        );
+      }
     },
     // table name = 'trader'
     'trader': {
@@ -353,10 +353,10 @@
 
         // add here your custom data columns
       ],
-      sqlCreateTableExtra: (
+      sqlCreateTableExtra: function(){return (
         ', CONSTRAINT marketID FOREIGN KEY (marketID) REFERENCES markets(marketID) ON UPDATE cascade ON DELETE cascade' +
         ', CONSTRAINT constantsID FOREIGN KEY (constantsID) REFERENCES constants(constantsID) ON UPDATE cascade ON DELETE cascade'
-      )
+      );}
     }
   };
 
@@ -365,14 +365,10 @@
     'CREATE INDEX If NOT EXISTS TraderIndex ON trader ("marketID", "traderProps_data_dateMs");'
   ];
 
-  /*
-  function updateSize(){
-    get(db, 'SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();')
-      .then(function(result){
-        sizeInBytes = result.size;
-      });
+  function getSizeBytes(db){
+    /* use result.size */
+    return get(db, 'SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size();');
   }
-  */
 
   function setupSchema(db){
     // check user_version
@@ -417,17 +413,10 @@
             return run(db, sql);
           });
         }, Promise.resolve());
-      })
-      .then(function() {
-        console.log('database setup successful');
-        dbRunning = true;
-        //updateSize(); // TODO
-        //setInterval(updateSize, 60*1000);
       });
-
   }
 
-  function setup(filename, mode /*optional*/){
+  function setup(){
     // create DBTable instances
     for (var tableName in tableDefinitions){
       dbTables[tableName] = new DBTable(
@@ -441,10 +430,8 @@
     process.on('SIGTERM', closeDbAndExit);
     process.on('SIGINT', closeDbAndExit);
 
-    return setupDatabase(filename, mode)
-      .then(function(dbGlobal) {
-        db = dbGlobal;
-      });
+    /* pseudo running */
+    dbRunning = true;
   }
 
   function close(db) {
@@ -507,20 +494,13 @@
         return setupSchema(db);
       })
       .then(function(){
+        console.log('database setup successful:', filename);
         return db;
       });
   }
 
   function isRunning(){
     return dbRunning;
-  }
-
-  function getHandle(){
-    return db;
-  }
-
-  function size(){
-    return sizeInBytes;
   }
 
   return {
@@ -530,14 +510,11 @@
     createAsync: createAsync,
     promisify: promisify,
     setupSchema: setupSchema,
-    basenameSet: function(name){basename=name;},
-    basenameGet: function(){return basename;},
     basedirSet: function(dir){basedir=dir;},
     basedirGet: function(){return basedir;},
     strictSet: function(strictString){strict=strictString;},
-    getHandle: getHandle, // db handle
     isRunning: isRunning,
-    size: size,
+    getSizeBytes: getSizeBytes,
     flatten: flatten,
     unflatten: unflatten,
     dbTables: dbTables,

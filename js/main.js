@@ -45,11 +45,12 @@
   var addrZero = '0x0000000000000000000000000000000000000000';
   var startTime = new Date();
 
-  function Monitor(contentUpdated, network, quoteProvider){
+  function Monitor(contentUpdated, network, quoteProvider, versionString){
 
     this.contentUpdated = contentUpdated;
     this.network = network;
     this.quoteProvider = quoteProvider;
+    this.versionString = versionString;
     this.web3 = null;
     this.errors = [];
 
@@ -213,7 +214,8 @@
               self.pubsub.publish(data_array, contractDescription.marketsAddr, marketHash);
             }
           },
-          self.quoteProvider
+          self.quoteProvider,
+          self.versionString
         );
 
         self.markets[key] = marketNew;
@@ -511,8 +513,9 @@
     return undefined;
   }
 
-  function Core(contentUpdated){
+  function Core(contentUpdated, versionString){
     this.contentUpdated = contentUpdated;
+    this.versionString = versionString || 'unknonwn';
     this.monitors = {}; // one monitor instance for each network
     this.quoteProvider = new QuoteProvider(this.realtimeCallback.bind(this), null);
   }
@@ -539,7 +542,12 @@
 
     // start a network monitor for each network in config
     config.networks.forEach(function (network){
-      self.monitors[network] = new Monitor(function(){self.contentUpdated(network);}, network, self.quoteProvider);
+      self.monitors[network] = new Monitor(
+        function(){self.contentUpdated(network);},
+        network,
+        self.quoteProvider,
+        self.versionString
+      );
       self.monitors[network].start();
       self.contentUpdated(network);// trigger first update
     });
@@ -554,7 +562,6 @@
     var data = {
       uptime: Math.floor((new Date() - startTime) / 1000),
       dbIsRunning: db && db.isRunning(),
-      dbSize: db? db.size() : 0,
       networks: {}
     };
     Object.keys(this.monitors).forEach(function(network) {

@@ -186,15 +186,7 @@
                 React.createElement('dt', {className: 'col-sm-5'}, 'database running:'),
                 React.createElement('dd', {className: 'col-sm-7', style: {marginBottom: 0}},
                   (this.props.dbIsRunning?
-                    'yes (' + (
-                      (this.props.dbSize > 3*1024*1024) ?
-                        Math.floor(this.props.dbSize/(1024*1024)) + 'MB'
-                        :
-                        Math.floor(this.props.dbSize/1024) + 'KB'
-                    ) +
-                    ')'
-                    :
-                    'no (only available with nodejs)'
+                    'yes' : 'no (only available with nodejs)'
                   )
                 )
               )

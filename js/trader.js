@@ -29,8 +29,7 @@
       root.digioptionsTools,
       root.db,
       root.gaussian,
-      root.config,
-      root.gaussian
+      root.config
     );
   }
 })(this, function(Web3, digioptionsTools, db, gaussian, config){
@@ -70,10 +69,16 @@
 
   var Trader = function(
     marketDefinition,
-    contractDescription
+    contractDescription,
+    genOrder,
+    versionString
   ){
     this.marketDefinition = marketDefinition;
     this.contractDescription = contractDescription;
+    this.genOrder = genOrder;
+    this.constants = { // constants may be logged to database
+      versionString: versionString
+    };
     this.dataNetwork = digioptionsTools.dataNetworks[marketDefinition.network];
 
     this.volatility = underlyingCoreData[ // per year
@@ -93,7 +98,11 @@
     this.errorStrings = [];
 
     this.marketID = null; // database unique index
+    this.constantsID = null; // database unique index
     this.dbMarket = null;
+
+    var underlyingStringHex = web3.utils.utf8ToHex(this.marketDefinition.marketBaseData.underlyingString);
+    this.dbFilename = this.marketDefinition.marketBaseData.expiration + '-' + this.marketDefinition.network + '-' + this.contractDescription.marketsAddr + '-' + this.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + this.marketDefinition.marketBaseData.marketInterval + '-trader.db';
   };
 
   Trader.prototype.setup = function(){ // returns Promise
@@ -102,34 +111,36 @@
     if (! db.isRunning())
       return Promise.resolve();
 
-    var underlyingStringHex = web3.utils.utf8ToHex(self.marketDefinition.marketBaseData.underlyingString);
-    var filename = db.basedirGet() + '/' + self.marketDefinition.marketBaseData.expiration + '-' + self.marketDefinition.network + '-' + self.contractDescription.marketsAddr + '-' + self.marketDefinition.marketHash + '-' + underlyingStringHex + '-' + self.marketDefinition.marketBaseData.marketInterval + '-trader.db';
-
-    return db.dbTables['market'].insertOrIgnore(db.getHandle(), {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription})
-      .then(function(){
-        // TODO move/duplicate
-        return db.setupDatabase(filename);
-      })
+    return db.setupDatabase(db.basedirGet() + '/' + self.dbFilename)
       .then(function(dbMarket){
         self.dbMarket = dbMarket;
-        return db.dbTables['market'].insertOrIgnore(self.dbMarket, {marketDefinition: self.marketDefinition, contractDescription: self.contractDescription});
-      })
-      .then(function(){
-        return db.get(
+        return db.dbTables['market'].insertOrReplace(
           self.dbMarket,
-          'SELECT marketID from market WHERE "marketDefinition_network"=(?) and "contractDescription_marketsAddr"=(?) and "marketDefinition_marketHash"=(?);',
-          [
-            self.marketDefinition.network,
-            self.contractDescription.marketsAddr,
-            self.marketDefinition.marketHash
-          ]
+          {
+            marketDefinition: self.marketDefinition,
+            contractDescription: self.contractDescription
+          },
+          ' ON CONFLICT ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash") DO UPDATE SET marketID=marketID' +
+          ' RETURNING marketID'
         );
       })
       .then(function(result){
-        // finally set self.marketID
+        // set self.marketID
         self.marketID = result.marketID;
+
+        return db.dbTables['constants'].insertOrReplace(
+          self.dbMarket, {
+            constants: self.constants
+          },
+          ' ON CONFLICT (' + Object.keys(db.dbTables['constants'].columnByName).filter(function(colName){return colName != 'constantsID';}).map(function(key){return '"'+key+'"';}).join(',') + ') DO UPDATE SET constantsID=constantsID' +
+          ' RETURNING constantsID'
+        );
+      })
+      .then(function(result){
+        // set self.constantsID
+        self.constantsID = result.constantsID;
       }).catch(function(err){
-        console.log('db error (' + filename + '):', err);
+        console.log('db error (' + self.dbFilename + '):', err);
       });
   };
 
@@ -202,13 +213,14 @@
     this.infoStrings = infoStrings;
     this.errorStrings = errorStrings;
 
-    if ((! db.isRunning()) || (!self.dbname))
+    if ((! db.isRunning()) || (!self.dbMarket))
       return;
 
     db.dbTables['trader'].insertOrIgnore(
-      this.dbname,
+      self.dbMarket,
       {
-        marketID: this.marketID, // database unique index
+        marketID: this.marketID, // market unique index
+        constantsID: this.constantsID, // constants unique index
         // log everything that is required to render TraderView()
         traderProps: this.stateToProps()
       }
