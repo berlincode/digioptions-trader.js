@@ -7,4 +7,6 @@
 /js/url-polyfill.min.js
 /js/eth-lib-account.js
 /js/eth-lib-account.min.js
+/js/web3-core-method.js
+/js/web3-core-method.min.js
 /node_modules/
