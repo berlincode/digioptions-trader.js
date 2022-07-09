@@ -76,21 +76,27 @@
             'date (UTC): ' + (date? digioptionsTools.dateStringUTCTZ(date) : '-'),
             React.createElement('br', null),
 
-            React.createElement('div', {key: 'errorStrings', className: 'bg-danger'},
-              errorStrings.map(function(string, idx){
-                return [
-                  string,
-                  React.createElement('br', {key: idx})
-                ];
-              })
+            (
+              errorStrings &&
+              React.createElement('div', {key: 'errorStrings', className: 'bg-danger'},
+                errorStrings.map(function(string, idx){
+                  return [
+                    string,
+                    React.createElement('br', {key: idx})
+                  ];
+                })
+              )
             ),
-            React.createElement('div', {key: 'infoStrings'},
-              infoStrings.map(function(string, idx){
-                return [
-                  string,
-                  React.createElement('br', {key: idx})
-                ];
-              })
+            (
+              infoStrings &&
+              React.createElement('div', {key: 'infoStrings', className: 'bg-warning'},
+                infoStrings.map(function(string, idx){
+                  return [
+                    string,
+                    React.createElement('br', {key: idx})
+                  ];
+                })
+              )
             )
           )
         )
