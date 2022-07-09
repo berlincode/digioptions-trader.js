@@ -38,6 +38,27 @@
 
   var warnUnknownKeys = true;
 
+  /* replacer function to serialze BN to json */
+  function replacer(key, value){
+    if ( value && Web3.utils.isBN(this[key])){
+      return {'BN': this[key].toString(10)};
+    }
+    return value;
+  }
+
+  /* reviver function to deserialze json to BN */
+  function reviver(key, value){
+    if ((typeof value === 'object') && value.BN) {
+      return Web3.utils.toBN(value.BN);
+    }
+    return value;
+  }
+
+  var jsonBN = {
+    stringify: function(data){return JSON.stringify(data, replacer);},
+    parse: function(data){return JSON.parse(data, reviver);},
+  };
+
   /* promise helper functions */
   var slice = Function.call.bind(Array.prototype.slice);
   var concat = Function.call.bind(Array.prototype.concat);
@@ -164,8 +185,9 @@
 
   DBTable.prototype.create = function(db){
     var datatype_to_sqlite_type = function(datatype){
+      // following is required for STRICT mode
       if (datatype == 'json') {
-        return 'text';
+        return 'blob';
       }
       if (datatype == 'boolean') {
         return 'integer';
@@ -284,7 +306,6 @@
         {'name': 'contractDescription_marketsAddr', 'datatype': 'text'},
         {'name': 'marketDefinition_marketHash', 'datatype': 'text'},
 
-        //{'name': 'marketDefinition_marketListerAddr', 'datatype': 'json', , encode: JSON.stringify, decode: JSON.parse}, // TODO
         {'name': 'marketDefinition_chainID', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") in ("integer", "null"))'}, // TODO remove NULL if chainIDs were added
         {'name': 'marketDefinition_marketBaseData_baseUnitExp', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_baseUnitExp") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_expiration', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_expiration") = "integer")'},
@@ -298,8 +319,8 @@
         {'name': 'marketDefinition_marketBaseData_transactionFeeSignerStringPercent', 'datatype': 'text'},
         {'name': 'marketDefinition_marketBaseData_ndigit', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_ndigit") = "integer")'},
         {'name': 'marketDefinition_marketBaseData_signerAddr', 'datatype': 'text'},
-        {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
-        {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
+        {'name': 'marketDefinition_marketBaseData_strikesFloat', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
+        {'name': 'marketDefinition_marketBaseData_strikesStrings', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
         {'name': 'marketDefinition_marketBaseData_marketInterval', 'datatype': 'integer CHECK (typeof("marketDefinition_marketBaseData_marketInterval") = "integer")'},
 
         {'name': 'contractDescription_blockCreatedMarkets', 'datatype': 'integer CHECK (typeof("contractDescription_blockCreatedMarkets") = "integer")'},
@@ -344,8 +365,8 @@
         {'name': 'traderProps_quote_timestampMs', 'datatype': 'integer'},
         {'name': 'traderProps_quote_value', 'datatype': 'real'},
 
-        {'name': 'traderProps_infoStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
-        {'name': 'traderProps_errorStrings', 'datatype': 'json', encode: JSON.stringify, decode: JSON.parse},
+        {'name': 'traderProps_infoStrings', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
+        {'name': 'traderProps_errorStrings', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
         {'name': 'traderProps_data_dateMs', 'datatype': 'integer'},
         {'name': 'traderProps_data_volatility' , 'datatype': 'real'},
         {'name': 'traderProps_data_cashEth' , 'datatype': 'real'},
@@ -522,6 +543,7 @@
     all: all,
     run: run,
     quote: quote,
-    tableDefinitions: tableDefinitions
+    tableDefinitions: tableDefinitions,
+    jsonBN: jsonBN
   };
 });
