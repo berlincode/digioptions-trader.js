@@ -98,7 +98,7 @@
     contractAddresses: {
       // a list of contracts which are monitored
       'ethereum-mainnet': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-mainnet']),
-      'ethereum-testnet-ropsten': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-ropsten']),
+      'ethereum-testnet-goerli': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-goerli']),
       'ethereum-testnet-kovan': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-kovan']),
       'ethereum-testnet-rinkeby': contractAddressesDefault(digioptionsTools.dataNetworks['ethereum-testnet-rinkeby']),
       'thundercore-mainnet': contractAddressesDefault(digioptionsTools.dataNetworks['thundercore-mainnet']),
