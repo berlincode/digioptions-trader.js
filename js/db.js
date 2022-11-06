@@ -48,7 +48,7 @@
 
   /* reviver function to deserialze json to BN */
   function reviver(key, value){
-    if ((typeof value === 'object') && value.BN) {
+    if ((typeof value === 'object') && (value != null) && value.BN) {
       return Web3.utils.toBN(value.BN);
     }
     return value;
@@ -329,9 +329,9 @@
         {'name': 'contractDescription_versionMarkets_minor', 'datatype': 'integer CHECK (typeof("contractDescription_versionMarkets_minor") = "integer")'},
         {'name': 'contractDescription_versionMarkets_bugfix', 'datatype': 'integer CHECK (typeof("contractDescription_versionMarkets_bugfix") = "integer")'},
         {'name': 'contractDescription_offerMaxBlocksIntoFuture', 'datatype': 'integer CHECK (typeof("contractDescription_offerMaxBlocksIntoFuture") = "integer")'},
-        {'name': 'contractDescription_atomicOptionPayoutWeiExpBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
-        {'name': 'contractDescription_atomicOptionPayoutWeiBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
-        {'name': 'contractDescription_atomicOptionsPerFullOptionBN', 'datatype': 'text', encode: function(bn){return bn.toString(10);}, decode: web3.utils.toBN},
+        {'name': 'contractDescription_atomicOptionPayoutWeiExpBN', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
+        {'name': 'contractDescription_atomicOptionPayoutWeiBN', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
+        {'name': 'contractDescription_atomicOptionsPerFullOptionBN', 'datatype': 'json', encode: jsonBN.stringify, decode: jsonBN.parse},
       ],
       sqlCreateTableExtra: function(){return (
         ', UNIQUE ("marketDefinition_network", "contractDescription_marketsAddr", "marketDefinition_marketHash")'
