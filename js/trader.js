@@ -70,12 +70,12 @@
   var Trader = function(
     marketDefinition,
     contractDescription,
-    genOrder,
+    genOffers,
     versionString
   ){
     this.marketDefinition = marketDefinition;
     this.contractDescription = contractDescription;
-    this.genOrder = genOrder;
+    this.genOffers = genOffers;
     this.constants = { // constants may be logged to database
       versionString: versionString
     };
@@ -176,7 +176,7 @@
       this.infoStrings = infoStrings;
       return; // TODO no insert
     }
-    var currentSpotPrice = this.quote[quoteProvider.KeyValue];
+    //var currentSpotPrice = this.quote[quoteProvider.KeyValue];
     var secondsUntilExpiration = this.marketDefinition.marketBaseData.expiration - this.quote[quoteProvider.KeyTimestampMs]/1000;
 
     if (secondsUntilExpiration < 60) {
@@ -185,12 +185,14 @@
       return; // TODO no insert
     }
 
+    /*
     var optionIDToProbability = calcOptionIDToProbability(
       this.volatility,
       secondsUntilExpiration,
       currentSpotPrice,
       this.marketDefinition.marketBaseData.strikesFloat
     );
+    */
 
     /*
     var update = 4; // TODO

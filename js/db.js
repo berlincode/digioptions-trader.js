@@ -27,7 +27,7 @@
   }
 })(this, function(Web3, sqlite3){
 
-  var web3 = new Web3();
+  //var web3 = new Web3();
 
   var dbRunning = false;
   var basedir = './';

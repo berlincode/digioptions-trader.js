@@ -289,7 +289,7 @@
       this.trader = new trader.Trader(
         this.marketDefinition,
         this.contractDescription,
-        this.genOrder.bind(this),
+        this.genOffers.bind(this),
         this.versionString
       );
     }catch(err) {
@@ -322,8 +322,7 @@
     return this.contractDescription.marketsAddr;
   };
 
-  // TODO rename ...Offer
-  Market.prototype.genOrder = function(orders){
+  Market.prototype.genOffers = function(orders){
     var self = this;
 
     if (! this.account){
