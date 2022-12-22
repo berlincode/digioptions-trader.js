@@ -52,7 +52,7 @@
     "digioptions-contracts.js": "git+https://github.com/berlincode/digioptions-contracts.js.git",
     "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
     "factsigner": "git+https://github.com/berlincode/factsigner.git",
-    "jsonwebtoken": "^8.4.0",
+    "jsonwebtoken": "^9.0.0",
     "minimist": "^1.2.0",
     "patch-package": "^6.2.1",
     "react": "^18.0.0",
