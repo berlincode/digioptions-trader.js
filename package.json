@@ -1,6 +1,6 @@
 {
   "name": "digioptions-trader.js",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "description": "Customizable automatic trading system for DigiOptions",
   "homepage": "https://www.digioptions.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -49,18 +49,18 @@
   "dependencies": {
     "basic-auth": "^2.0.0",
     "bootstrap": "~4.6.0",
-    "digioptions-contracts.js": "git+https://github.com/berlincode/digioptions-contracts.js.git",
-    "digioptions-tools.js": "git+https://github.com/berlincode/digioptions-tools.js.git",
-    "factsigner": "git+https://github.com/berlincode/factsigner.git",
+    "digioptions-contracts.js": "git+https://git@github.com/berlincode/digioptions-contracts.js.git",
+    "digioptions-tools.js": "git+https://git@github.com/berlincode/digioptions-tools.js.git",
+    "factsigner": "git+https://git@github.com/berlincode/factsigner.git",
     "jsonwebtoken": "^8.4.0",
     "minimist": "^1.2.0",
-    "patch-package": "^6.2.1",
+    "patch-package": "^8.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "requirejs": "2.3.6",
     "sqlite3": "^5.0.0",
-    "web3": "~1.8.0",
-    "ws": "^7.0.0"
+    "web3": "~1.10.0",
+    "ws": "^8.12.1"
   },
   "devDependencies": {
     "eslint": "^8.4.0",

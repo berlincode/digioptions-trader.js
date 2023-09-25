@@ -36,7 +36,7 @@
     /* MarketMonitor settings */
     /**************************/
 
-    /* list networks that should be monitored (e.g. 'ethereum-mainnet', 'ethereum-testnet-ropsten', ...) */
+    /* list networks that should be monitored (e.g. 'ethereum-mainnet', 'ethereum-testnet-goerli', ...) */
     networks: ['thundercore-mainnet', 'thundercore-testnet'],
 
     /* list/try to start markets that are expired no more than 74 hours ago */
@@ -71,7 +71,7 @@
       'ethereum-mainnet': [
         //'0x<your-private-key>',
       ],
-      'ethereum-testnet-ropsten': [
+      'ethereum-testnet-goerli': [
         //'0x<your-private-key>',
       ],
       'ethereum-testnet-kovan': [
